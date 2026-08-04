@@ -1,0 +1,20 @@
+# --- credentials: never commit these ---------------------------------------
+config.ini
+conifg.ini
+*.pem
+*.key
+.env
+
+# --- python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# --- generated figures ------------------------------------------------------
+# The three checked-in SVGs are illustrative samples; re-runs overwrite them.
+# Uncomment if you would rather they never travel.
+# chain.svg
+# call.svg
+# put.svg
