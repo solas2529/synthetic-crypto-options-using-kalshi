@@ -147,6 +147,28 @@ high, running left from `K_m`. Below the bottom quoted strike both stacks flatte
 lower tail, and it is worth exactly the chain's put at the bottom strike, since
 `P(K_0)` *is* the whole area below the ladder.
 
+Both payoff figures carry a **greeks strip** under the price row, and it is split
+on purpose. Differentiating `C(K) = DF ∫_K^∞ Q(S_T > u) du` *in the strike* hands
+back the integrand:
+
+```
+dC/dK   = −DF · Q(S_T > K)          d²C/dK² = DF · f(K)
+```
+
+which is Breeden–Litzenberger read backwards. Both sides of that are already on
+the ladder — they are the `digital_mid` and `pdf` columns in different units — so
+`dC/dK` is **exact**, needs no vol, and stays right where the smile is wrong. It
+is drawn in the digitals' own blue, and it is the slope of the very curve the
+left panel plots. The put's mirror is `dP/dK = +DF · Q(S_T ≤ u)`, its own left
+panel, and parity pins them: `dC/dK − dP/dK = −DF` exactly.
+
+Delta, gamma, vega and theta differentiate in `F`, `σ` and `t` instead — none of
+which one expiry's strike ladder pins down, since the quotes fix the
+*distribution* of `S_T`, not how it responds when the forward or the vol moves.
+Those four are Black-76 at that strike's own IV: a smile-local reading, exact
+only for the option it was struck from, and dashed out entirely when the vol
+inversion fails. `OptionChain.greeks(row, kind)` returns the lot.
+
 **Both payoff figures need two live strikes on their own side of the money**, and
 on these ladders that is a real constraint, not a formality. `_pinned` drops every
 strike resting on the extreme tick, and on a short-dated crypto expiry the whole
@@ -185,6 +207,23 @@ that shape; it comes out of independently quoted binaries.
 | `call_hi` | upper *estimate* — left-Riemann + modelled tail |
 | `tail_weight` | fraction of `call` coming from extrapolation; `model_dependent` flags >25% |
 | `iv` | Black-76 vol implied by `call` against the implied forward |
+
+`OptionChain.greeks(row, kind)` adds the sensitivities, in the units a trader
+quotes them rather than the raw partials:
+
+| field | meaning | model? |
+|---|---|---|
+| `dual_delta` | `∂V/∂K` — **exact**, minus the digital quote at `K` | none |
+| `dual_gamma` | `∂²V/∂K²` — **exact**, `DF ×` the density | none |
+| `delta` | `∂V/∂F`, per \$1 of forward | Black-76 at `row.iv` |
+| `gamma` | `∂²V/∂F²`, per \$1² — displayed `× 1e6`, as `pdf` is | Black-76 at `row.iv` |
+| `vega` | `∂V/∂σ`, per **vol point** | Black-76 at `row.iv` |
+| `theta` | `−∂V/∂t`, per **day** | Black-76 at `row.iv` |
+
+The Black-76 four are `None` when the vol inversion failed; the two strike
+derivatives are always there, since they need only the quote and the density.
+Theta's carry term uses the rate recovered from the chain's own discount factor,
+so at the default `r = 0` it is pure gamma rent.
 
 `side="bid"`/`"ask"` rebuild the whole chain from that side of the book, giving
 an executable band around the mid.
@@ -244,6 +283,17 @@ no API key, no network.
 
 All three SVGs are checked too: well-formed XML, every strike present, a fallback
 fill on every text node, dark mode declared, and nothing plotted outside the canvas.
+The greeks are checked in both tiers. The Black-76 four are differentiated
+numerically out of the closed form — off-ATM and at a non-zero rate, so theta's
+carry term is exercised rather than cancelling — and the analytic values must
+land on the finite differences; parity then pins `delta_call − delta_put = DF`,
+equal gammas and vegas, and `theta_call − theta_put = r(C − P)`. The two strike
+derivatives are checked against the quote and the density they are supposed to
+be, against each other through `dC/dK − dP/dK = −DF`, and — the claim that makes
+them worth printing — against the measured slope of the chain's own `call` and
+`put` columns across neighbouring strikes. A row with no IV must keep its strike
+derivatives and dash exactly the other four, in the object and in the strip.
+
 The payoff figures get an extra arithmetic check, since a drawing that merely
 *looks* like a replication is worth nothing — the stacks they draw are priced
 independently and must come back as `call_lo`/`call_hi` to 1e-9 (and, on the put

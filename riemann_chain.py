@@ -42,6 +42,7 @@ from typing import Iterable, Literal, Sequence
 __all__ = [
     "Digital",
     "ChainRow",
+    "Greeks",
     "OptionChain",
     "build_chain",
     "digitals_from_markets",
@@ -59,6 +60,10 @@ Side = Literal["bid", "mid", "ask"]
 
 def _norm_cdf(x: float) -> float:
     return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def _norm_pdf(x: float) -> float:
+    return math.exp(-0.5 * x * x) / math.sqrt(2.0 * math.pi)
 
 
 def _xml_escape(s: str) -> str:
@@ -86,6 +91,24 @@ def _text(x, y, s, cls, anchor="start", size=12.5, mono=True, weight=400) -> str
 
 def _pts(points: Iterable[tuple[float, float]]) -> str:
     return " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+
+
+def _greek_cells(g) -> list[tuple[str, str, bool]]:
+    """(label, value, is_exact) per greek, for the strip both figures draw.
+
+    The strike derivative is listed last but is the only one on the row that the
+    ladder actually knows; `is_exact` is what the figures grey the others down
+    by, so the picture never implies the Black-76 four are quoted.
+    """
+    v = "C" if g.kind == "call" else "P"
+    dash = "--"
+    return [
+        (f"delta  d{v}/dF", dash if g.delta is None else f"{g.delta:.4f}", False),
+        ("gamma  x1e6", dash if g.gamma is None else f"{g.gamma * 1e6:,.1f}", False),
+        ("vega  per vol pt", dash if g.vega is None else f"{g.vega:,.2f}", False),
+        ("theta  per day", dash if g.theta is None else f"{g.theta:,.2f}", False),
+        (f"d{v}/dK  off the ladder", f"{g.dual_delta:.4f}", True),
+    ]
 
 
 def _wrap(lines: Sequence[str], width: int = 104) -> list[str]:
@@ -197,6 +220,46 @@ class ChainRow:
         return self.tail_weight > 0.25
 
 
+@dataclass(frozen=True)
+class Greeks:
+    """Sensitivities of one reconstructed vanilla, in two tiers.
+
+    `dual_delta` and `dual_gamma` are *exact*.  Differentiating
+    C(K) = DF int_K^inf Q(S > u) du in the strike gives back the integrand,
+
+        dC/dK   = -DF Q(S_T > K)      d2C/dK2 = DF f(K)
+
+    which is Breeden-Litzenberger read backwards: the two strike derivatives are
+    the digital quote and the density, both of which the ladder already carries.
+    No model, no vol, nothing fitted -- they are the `digital_mid` and `pdf`
+    columns wearing different units, and they stay right even where the smile
+    does not.
+
+    `delta`, `gamma`, `vega` and `theta` differentiate in the forward, the vol
+    and the clock, none of which a single expiry's strike ladder pins down: the
+    quotes fix the distribution of S_T, not how it responds when F or sigma
+    moves.  So these are Black-76 at this row's own implied vol -- a smile-local
+    reading, exact only for the option it was struck from, and unavailable at all
+    (None) when the inversion fails.
+
+    Units are the ones a trader quotes, not the raw partials -- see the field
+    comments.  `parity` is what a call and put on the same strike must satisfy.
+    """
+
+    delta: float | None       # dC/dF, per $1 of forward
+    gamma: float | None       # d2C/dF2, per $1^2 -- displayed x 1e6
+    vega: float | None        # dC/dsigma, per *vol point* (partial / 100)
+    theta: float | None       # -dC/dt, per *day* (partial / 365)
+    dual_delta: float         # dC/dK, exact: -DF x the digital quote
+    dual_gamma: float         # d2C/dK2, exact: DF x the density
+    kind: Literal["call", "put"] = "call"
+
+    @property
+    def model_free(self) -> tuple[float, float]:
+        """The two that need no model, in (dC/dK, d2C/dK2) order."""
+        return self.dual_delta, self.dual_gamma
+
+
 @dataclass
 class OptionChain:
     forward: float               # E[S_T] implied by the binaries
@@ -220,6 +283,32 @@ class OptionChain:
     def atm_iv(self) -> float | None:
         row = self.atm()
         return row.iv if row else None
+
+    def greeks(self, row: ChainRow | None = None,
+               kind: Literal["call", "put"] = "call") -> Greeks | None:
+        """Sensitivities for one row, defaulting to the ATM strike.
+
+        The strike derivatives come off the ladder directly; the rest are
+        Black-76 at `row.iv`, and are None when that inversion failed.  See
+        `Greeks` for why the two tiers are not interchangeable.
+        """
+        row = row if row is not None else self.atm()
+        if row is None:
+            return None
+
+        # Exact, straight off the quotes.  A call's value falls as the strike
+        # rises, at exactly the rate the digital there is worth; a put's climbs
+        # at the rate of the complementary digital.
+        surv = max(0.0, min(1.0, 1.0 - row.cdf))
+        dual_delta = self.discount * (-surv if kind == "call" else 1.0 - surv)
+        dual_gamma = self.discount * row.pdf
+
+        if row.iv is None or self.tau <= 0 or self.forward <= 0:
+            return Greeks(None, None, None, None, dual_delta, dual_gamma, kind)
+
+        delta, gamma, vega, theta = _black76_greeks(
+            self.forward, row.strike, self.tau, row.iv, self.discount, kind)
+        return Greeks(delta, gamma, vega, theta, dual_delta, dual_gamma, kind)
 
     def replicable(self) -> tuple[bool, bool]:
         """(call figure drawable, put figure drawable).
@@ -436,7 +525,7 @@ class OptionChain:
         e = _xml_escape
         pad, gap = 26, 34
         w = 880
-        top = 132                                # header block, as in format_svg
+        top = 190                                # header block: two stat rows
         ax_l, ax_b, ph, th = 54, 32, 250, 26     # y gutter, x gutter, plot h, panel title
         pw = (w - 2 * pad - gap) / 2
         piw = pw - ax_l
@@ -499,6 +588,12 @@ class OptionChain:
         if self.discount < 1.0:
             foot.append(f"areas are undiscounted; the quoted call carries the "
                         f"{self.discount:.4f} discount factor")
+        foot.append(
+            "greeks: dC/dK is exact -- it is minus the digital quote at K, which this "
+            "ladder prices directly, and its slope-of-the-curve reading is the left panel. "
+            "delta, gamma, vega and theta differentiate in F, sigma and t, which one expiry "
+            "cannot pin down, so they are Black-76 at this strike's own IV"
+        )
         foot += [f"warning:  {x}" for x in self.warnings]
         wrapped = _wrap(foot)
 
@@ -548,6 +643,17 @@ class OptionChain:
             o.append(_text(sx, 99, label, "mut", size=10.5, mono=False))
             o.append(_text(sx, 121, val, "ink", size=19, weight=600))
             sx += max(len(val) * 12 + 34, 122)
+
+        # ---- greeks strip ------------------------------------------------------
+        # Second row, ruled off from the prices above it: these are sensitivities,
+        # and one of them is quoted while four are fitted, which the colour says.
+        o.append(f'<line class="rl" x1="{pad}" y1="136" x2="{w - pad}" y2="136" '
+                 f'stroke="#e1e0d9" stroke-width="1"/>')
+        gx = pad
+        for label, val, exact in _greek_cells(self.greeks(atm, "call")):
+            o.append(_text(gx, 157, label, "mut", size=10.5, mono=False))
+            o.append(_text(gx, 179, val, "acc" if exact else "ink", size=17, weight=600))
+            gx += max(len(val) * 11 + 34, 128)
 
         # ---- panel scaffolding ------------------------------------------------
         for px, title in ((pxa, "D(K) = Q(S > K)   ·   area right of the strike = the call"),
@@ -730,7 +836,7 @@ class OptionChain:
         e = _xml_escape
         pad, gap = 26, 34
         w = 880
-        top = 132                                # header block, as in format_svg
+        top = 190                                # header block: two stat rows
         ax_l, ax_b, ph, th = 54, 32, 250, 26     # y gutter, x gutter, plot h, panel title
         pw = (w - 2 * pad - gap) / 2
         piw = pw - ax_l
@@ -797,6 +903,12 @@ class OptionChain:
                 f"{katm - kmin:,.0f}, the payoff does not. That wedge is the tail model -- "
                 f"{tail_w:.1%} of this put's value"
             )
+        foot.append(
+            "greeks: dP/dK is exact -- it is the complementary digital Q(S <= K) at K, the "
+            "left panel's own curve, priced by this ladder. delta, gamma, vega and theta "
+            "differentiate in F, sigma and t, which one expiry cannot pin down, so they are "
+            "Black-76 at this strike's own IV"
+        )
         if self.discount < 1.0:
             foot.append(f"areas are undiscounted; the quoted put carries the "
                         f"{self.discount:.4f} discount factor")
@@ -849,6 +961,17 @@ class OptionChain:
             o.append(_text(sx, 99, label, "mut", size=10.5, mono=False))
             o.append(_text(sx, 121, val, "ink", size=19, weight=600))
             sx += max(len(val) * 12 + 34, 122)
+
+        # ---- greeks strip ------------------------------------------------------
+        # As the call figure, mirrored: the put's exact strike derivative is the
+        # *complementary* digital, +DF Q(S <= K), which is the left panel's curve.
+        o.append(f'<line class="rl" x1="{pad}" y1="136" x2="{w - pad}" y2="136" '
+                 f'stroke="#e1e0d9" stroke-width="1"/>')
+        gx = pad
+        for label, val, exact in _greek_cells(self.greeks(atm, "put")):
+            o.append(_text(gx, 157, label, "mut", size=10.5, mono=False))
+            o.append(_text(gx, 179, val, "acc" if exact else "ink", size=17, weight=600))
+            gx += max(len(val) * 11 + 34, 128)
 
         # ---- panel scaffolding ------------------------------------------------
         for px, title in ((pxa, "F(K) = Q(S <= K)   ·   area left of the strike = the put"),
@@ -1344,6 +1467,41 @@ def _black76_call(f: float, k: float, tau: float, sigma: float, df: float) -> fl
     v = sigma * math.sqrt(tau)
     d1 = (math.log(f / k) + 0.5 * v * v) / v
     return df * (f * _norm_cdf(d1) - k * _norm_cdf(d1 - v))
+
+
+def _black76_greeks(f: float, k: float, tau: float, sigma: float, df: float,
+                    kind: Literal["call", "put"]) -> tuple[float, float, float, float]:
+    """(delta, gamma, vega, theta) under Black-76, in *quoting* units.
+
+    vega is per vol point and theta per day, since that is how both get read;
+    the raw partials are per 1.00 of vol and per year.  The carry rate is
+    recovered from the discount factor rather than passed, so theta stays
+    consistent with whatever `rate=` built the chain -- at the default r = 0 its
+    second term vanishes and theta is pure gamma rent.
+    """
+    if tau <= 0 or sigma <= 0 or f <= 0 or k <= 0:
+        return 0.0, 0.0, 0.0, 0.0
+    v = sigma * math.sqrt(tau)
+    d1 = (math.log(f / k) + 0.5 * v * v) / v
+    d2 = d1 - v
+    n1 = _norm_pdf(d1)
+    r = -math.log(df) / tau if 0.0 < df < 1.0 else 0.0
+
+    # Both live options share gamma and vega: the two payoffs differ by the
+    # forward itself, which is linear in F and flat in sigma.
+    gamma = df * n1 / (f * v)
+    vega = df * f * n1 * math.sqrt(tau)
+    decay = df * f * n1 * sigma / (2.0 * math.sqrt(tau))   # the shared time value
+
+    if kind == "call":
+        delta = df * _norm_cdf(d1)
+        price = df * (f * _norm_cdf(d1) - k * _norm_cdf(d2))
+    else:
+        delta = -df * _norm_cdf(-d1)
+        price = df * (k * _norm_cdf(-d2) - f * _norm_cdf(-d1))
+    theta = r * price - decay
+
+    return delta, gamma, vega / 100.0, theta / 365.0
 
 
 def _density_vol(rows: Sequence[ChainRow], forward: float, tau: float) -> float | None:
@@ -2188,6 +2346,102 @@ def selftest() -> int:
     pin_ratio = bad.atm().iv / _density_vol(bad.rows, bad.forward, bad.tau)
     print(f"  [INFO] pinned-quote chain from step 11 sits at {pin_ratio:.2f}x -- under "
           f"the {_VOL_GAP} threshold; `_pinned` and tail_weight own that case")
+
+    print("\n16. greeks: the fitted four against finite differences, the exact two "
+          "against the ladder")
+    # Tier 1 -- Black-76 partials. Differentiate the closed form numerically and
+    # the analytic greeks must land on it; that is the only thing these four
+    # claim to be. Done off-ATM and at a non-zero rate so theta's carry term is
+    # actually exercised rather than cancelling.
+    gf, gk, gr = _F0, _F0 * 1.05, 0.05
+    gdf = math.exp(-gr * _TAU)
+
+    def _px(f: float, k: float, t: float, s: float, kind: str) -> float:
+        d = math.exp(-gr * t)
+        c = _black76_call(f, k, t, s, d)
+        return c if kind == "call" else c - d * (f - k)   # parity, exactly
+
+    for kind in ("call", "put"):
+        dl, gm, vg, th = _black76_greeks(gf, gk, _TAU, _SIGMA, gdf, kind)
+        hf, hs, ht = gf * 1e-5, 1e-6, 1e-8
+        fd_dl = (_px(gf + hf, gk, _TAU, _SIGMA, kind)
+                 - _px(gf - hf, gk, _TAU, _SIGMA, kind)) / (2 * hf)
+        fd_gm = (_px(gf + hf, gk, _TAU, _SIGMA, kind) - 2 * _px(gf, gk, _TAU, _SIGMA, kind)
+                 + _px(gf - hf, gk, _TAU, _SIGMA, kind)) / (hf * hf)
+        fd_vg = (_px(gf, gk, _TAU, _SIGMA + hs, kind)
+                 - _px(gf, gk, _TAU, _SIGMA - hs, kind)) / (2 * hs) / 100.0
+        fd_th = -(_px(gf, gk, _TAU + ht, _SIGMA, kind)
+                  - _px(gf, gk, _TAU - ht, _SIGMA, kind)) / (2 * ht) / 365.0
+        ok &= _check(f"{kind} delta vs dV/dF", dl, fd_dl, 1e-6)
+        ok &= _check(f"{kind} gamma vs d2V/dF2", gm * 1e6, fd_gm * 1e6, 1e-4)
+        ok &= _check(f"{kind} vega vs dV/dsigma", vg, fd_vg, 1e-6)
+        ok &= _check(f"{kind} theta vs -dV/dt", th, fd_th, 1e-5)
+
+    # Parity ties the two sides together: C - P = DF(F - K) is linear in F and
+    # flat in sigma, so the deltas must differ by exactly the discount factor and
+    # the vegas not at all.
+    cd, cg, cv, ct = _black76_greeks(gf, gk, _TAU, _SIGMA, gdf, "call")
+    pd_, pg, pv, pt = _black76_greeks(gf, gk, _TAU, _SIGMA, gdf, "put")
+    ok &= _check("delta_call - delta_put == DF", cd - pd_, gdf, 1e-12)
+    ok &= _check("vega_call - vega_put == 0", cv - pv, 0.0, 1e-12)
+    ok &= _check("gamma_call - gamma_put == 0", cg - pg, 0.0, 1e-12)
+    ok &= _check("theta_call - theta_put == r(C-P) per day",
+                 (ct - pt) * 365.0,
+                 gr * (_px(gf, gk, _TAU, _SIGMA, "call") - _px(gf, gk, _TAU, _SIGMA, "put")),
+                 1e-9)
+
+    # Tier 2 -- the strike derivatives, which are not fitted to anything. These
+    # must come back as the quote and the density themselves, and their parity is
+    # dC/dK - dP/dK = -DF, since C - P = DF(F - K) differentiates to -DF.
+    gch = build_chain(_lognormal_digitals(strikes), expiry=_EXPIRY, now=_NOW)
+    grow = gch.atm()
+    gc, gp = gch.greeks(grow, "call"), gch.greeks(grow, "put")
+    ok &= _check("dC/dK == -DF x the digital quote", gc.dual_delta,
+                 -gch.discount * (1.0 - grow.cdf), 1e-12)
+    ok &= _check("dP/dK == +DF x Q(S <= K)", gp.dual_delta,
+                 gch.discount * grow.cdf, 1e-12)
+    ok &= _check("d2C/dK2 == DF x the density", gc.dual_gamma,
+                 gch.discount * grow.pdf, 1e-12)
+    ok &= _check("dC/dK - dP/dK == -DF", gc.dual_delta - gp.dual_delta, -gch.discount, 1e-12)
+
+    # And the claim that makes them worth printing: they really are the slope of
+    # the reconstructed call column, not just of the model that column is fitted
+    # to. Central difference across the neighbouring strikes of the chain itself.
+    gi = gch.rows.index(grow)
+    k_lo, k_hi = gch.rows[gi - 1], gch.rows[gi + 1]
+    ok &= _check("dC/dK matches the call column's own slope",
+                 (k_hi.call - k_lo.call) / (k_hi.strike - k_lo.strike),
+                 gc.dual_delta, 5e-3)
+    ok &= _check("dP/dK matches the put column's own slope",
+                 (k_hi.put - k_lo.put) / (k_hi.strike - k_lo.strike),
+                 gp.dual_delta, 5e-3)
+
+    # A row whose vol inversion failed still has exact strike derivatives -- the
+    # figures print those and dash the rest, so None must survive the trip.
+    noiv = replace(grow, iv=None)
+    gnone = gch.greeks(noiv, "call")
+    intact = (gnone.delta is None and gnone.gamma is None and gnone.vega is None
+              and gnone.theta is None and gnone.dual_delta == gc.dual_delta)
+    print(f"  [{'PASS' if intact else 'FAIL'}] a row with no IV keeps dC/dK and "
+          f"dashes the Black-76 four")
+    ok &= intact
+    dashes = sum(1 for _, v, _ in _greek_cells(gnone) if v == "--")
+    ok &= dashes == 4
+    print(f"  [{'PASS' if dashes == 4 else 'FAIL'}] the strip dashes exactly those "
+          f"four cells ({dashes} of 4)")
+
+    # Finally, the numbers have to reach the figures.
+    for label, svg, sym in (("call", gch.format_payoff_svg(), "dC/dK"),
+                            ("put", gch.format_put_payoff_svg(), "dP/dK")):
+        root = ET.fromstring(svg)
+        cells = [t.text for t in root.iter("{http://www.w3.org/2000/svg}text")]
+        want = [f"delta  d{sym[1]}/dF", "gamma  x1e6", "vega  per vol pt",
+                "theta  per day", f"{sym}  off the ladder"]
+        drawn = all(lab in cells for lab in want)
+        exact = f"{gch.greeks(gch.atm(), label).dual_delta:.4f}" in cells
+        print(f"  [{'PASS' if drawn and exact else 'FAIL'}] {label}.svg carries all "
+              f"five greeks, with {sym} printed to 4dp")
+        ok &= drawn and exact
 
     print("\n" + ("ALL CHECKS PASSED" if ok else "SOME CHECKS FAILED"))
     return 0 if ok else 1
