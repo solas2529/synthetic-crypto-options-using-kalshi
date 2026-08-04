@@ -105,10 +105,14 @@ really quoted. The library still reconstructs a bin ladder if you hand its
 markets to `build_chain` yourself, renormalisation and all (see Validation); it
 just no longer shows up as something to trade off.
 
-Everything the old flags exposed is now fixed at the defaults that were already
-right for these markets: mid quotes, exponential tails, zero carry, and the
-informative CDF window on the printed table. The library half is unchanged and
-still takes all of it as keyword arguments.
+The knobs the old flags exposed are gone rather than defaulted. Tail fitting and
+PAVA repair are now unconditional — truncating the tail biases the forward and
+every call low, and integrating a non-monotone `D(K)` produces negative
+densities, so neither switch was ever worth throwing. The widest-usable-spread
+cutoff is a module constant. What survives as keyword arguments is what gets
+used: `side=` (the `bid`/`ask` chains that give the executable band), `rate=`
+(zero carry is right for these expiries, not for every expiry), `min_strikes=`,
+and `drop_pinned=`.
 
 **`chain.svg`** is the table `OptionChain.format_svg()` renders: the same columns
 plus an inline density bar, the ATM row marked, and the warnings carried into the
@@ -171,6 +175,19 @@ which one expiry's strike ladder pins down, since the quotes fix the
 Those four are Black-76 at that strike's own IV: a smile-local reading, exact
 only for the option it was struck from, and dashed out entirely when the vol
 inversion fails. `OptionChain.greeks(row, kind)` returns the lot.
+
+Under the panels both figures print **every quoted strike in the 2%–98% CDF
+band** — strike, `D(K)`, `cdf`, `pdf`, the reconstructed call or put, its `iv`,
+and all five greeks per row, ATM marked. The panels argue about one strike; this
+says what every other rung is worth, so the figure carries the whole chain
+instead of a headline. The band is the same one the printed table uses, because
+the *panels* deliberately take the full ladder (that is where the "quotes stop
+here" line comes from) and a live ladder can run hundreds of strikes whose rows
+would be all zeroes; the count hidden is stated under the table.
+
+Reading down the `dC/dK` column against `D(K)` is the whole model-free claim in
+one glance: they are the same numbers, negated. On the put side `dP/dK` and `cdf`
+match outright.
 
 **Both payoff figures need two live strikes on their own side of the money**, and
 on these ladders that is a real constraint, not a formality. `_pinned` drops every
@@ -296,6 +313,11 @@ be, against each other through `dC/dK − dP/dK = −DF`, and — the claim that
 them worth printing — against the measured slope of the chain's own `call` and
 `put` columns across neighbouring strikes. A row with no IV must keep its strike
 derivatives and dash exactly the other four, in the object and in the strip.
+
+The per-strike blocks are checked as data, not decoration: all 11 columns headed,
+a row for every banded strike, every `dC/dK` cell equal to `-D(K)` on its own row
+(and `dP/dK` to `cdf`), every printed option value equal to the chain's own
+column, and `call - put = DF(F - K)` across every row of both tables.
 
 The payoff figures get an extra arithmetic check, since a drawing that merely
 *looks* like a replication is worth nothing — the stacks they draw are priced
