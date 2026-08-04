@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 682" width="880" height="682" role="img" aria-label="Riemann construction and ATM replicating payoff for KXBTCD-26AUG0417">
+<style>
+svg{color-scheme:light dark}
+.p{fill:#f9f9f7}.c{fill:#fcfcfb}.ink{fill:#0b0b0b}.ink2{fill:#52514e}
+.mut{fill:#898781}.acc{fill:#2a78d6}.acc2{fill:#eb6834}
+.sk{stroke:#2a78d6}.sk2{stroke:#eb6834}.fill{fill:#2a78d6}
+.rl{stroke:#e1e0d9}.ax{stroke:#c3c2b7}.dead{fill:#898781}
+.rg{stroke:rgba(11,11,11,.10)}
+@media(prefers-color-scheme:dark){
+.p{fill:#0d0d0d}.c{fill:#1a1a19}.ink{fill:#fff}.ink2{fill:#c3c2b7}
+.mut{fill:#898781}.acc{fill:#3987e5}.acc2{fill:#d95926}
+.sk{stroke:#3987e5}.sk2{stroke:#d95926}.fill{fill:#3987e5}
+.rl{stroke:#2c2c2a}.ax{stroke:#383835}.dead{fill:#898781}
+.rg{stroke:rgba(255,255,255,.10)}}
+</style>
+<rect class="p" width="880" height="682" fill="#f9f9f7"/>
+<rect class="c rg" x="13" y="13" width="854" height="656" rx="10" fill="#fcfcfb" stroke="rgba(11,11,11,.10)"/>
+<text class="ink" x="26" y="52" fill="#0b0b0b" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="17" font-weight="600" text-anchor="start">KXBTCD-26AUG0417</text>
+<text class="mut" x="26" y="71" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="11.5" font-weight="400" text-anchor="start">the ATM call as an integral of 6 digitals, and as the stack of digitals that replicates it   ·   expiry 2026-08-04 21:00 UTC</text>
+<text class="mut" x="26" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">forward</text>
+<text class="ink" x="26" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">64,253.89</text>
+<text class="mut" x="168" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">ATM strike</text>
+<text class="ink" x="168" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">64,250</text>
+<text class="mut" x="290" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">call</text>
+<text class="ink" x="290" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">98.74</text>
+<text class="mut" x="412" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">band</text>
+<text class="ink" x="412" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">±66.24</text>
+<text class="mut" x="534" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">ATM IV</text>
+<text class="ink" x="534" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">33.7%</text>
+<text class="ink2" x="26" y="148" fill="#52514e" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="11" font-weight="600" text-anchor="start">D(K) = Q(S &gt; K)   ·   area right of the strike = the call</text>
+<rect class="dead" x="316.6" y="158" width="106.4" height="250" fill="#898781" opacity=".06"/>
+<line class="ax" x1="316.6" y1="158" x2="316.6" y2="408" stroke="#c3c2b7" stroke-width="1" stroke-dasharray="2 3"/>
+<line class="ax" x1="80" y1="158" x2="80" y2="408" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="80" y1="408" x2="423" y2="408" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="80.0" y1="408" x2="80.0" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="127.3" y1="408" x2="127.3" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="174.6" y1="408" x2="174.6" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="221.9" y1="408" x2="221.9" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="269.2" y1="408" x2="269.2" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="316.6" y1="408" x2="316.6" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<text class="mut" x="80" y="426" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="middle">63,500</text>
+<text class="mut" x="317" y="426" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="middle">64,750</text>
+<line class="sk2" x1="221.9" y1="158" x2="221.9" y2="408" stroke="#eb6834" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+<text class="acc2" x="222" y="426" fill="#eb6834" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="600" text-anchor="middle">K 64,250</text>
+<text class="ink2" x="457" y="148" fill="#52514e" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="11" font-weight="600" text-anchor="start">payoff at expiry vs settlement price</text>
+<rect class="dead" x="747.6" y="158" width="106.4" height="250" fill="#898781" opacity=".06"/>
+<line class="ax" x1="747.6" y1="158" x2="747.6" y2="408" stroke="#c3c2b7" stroke-width="1" stroke-dasharray="2 3"/>
+<line class="ax" x1="511.0" y1="158" x2="511.0" y2="408" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="511.0" y1="408" x2="854" y2="408" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="511.0" y1="408" x2="511.0" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="558.3" y1="408" x2="558.3" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="605.6" y1="408" x2="605.6" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="652.9" y1="408" x2="652.9" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="700.2" y1="408" x2="700.2" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<line class="ax" x1="747.6" y1="408" x2="747.6" y2="412" stroke="#c3c2b7" stroke-width="1"/>
+<text class="mut" x="511" y="426" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="middle">63,500</text>
+<text class="mut" x="748" y="426" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="middle">64,750</text>
+<line class="sk2" x1="652.9" y1="158" x2="652.9" y2="408" stroke="#eb6834" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+<text class="acc2" x="653" y="426" fill="#eb6834" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="600" text-anchor="middle">K 64,250</text>
+<line class="rl" x1="80" y1="408.0" x2="423" y2="408.0" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="70" y="412" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">0.00</text>
+<line class="rl" x1="80" y1="345.5" x2="423" y2="345.5" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="70" y="350" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">0.25</text>
+<line class="rl" x1="80" y1="283.0" x2="423" y2="283.0" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="70" y="287" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">0.50</text>
+<line class="rl" x1="80" y1="220.5" x2="423" y2="220.5" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="70" y="224" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">0.75</text>
+<line class="rl" x1="80" y1="158.0" x2="423" y2="158.0" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="70" y="162" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">1.00</text>
+<polygon class="fill" points="221.9,274.2 269.2,384.2 316.6,401.8 316.6,401.8 321.0,402.4 325.4,403.1 329.9,403.6 334.3,404.1 338.7,404.5 343.2,404.9 347.6,405.3 352.0,405.6 356.5,405.8 360.9,406.1 365.3,406.3 369.8,406.5 374.2,406.6 378.6,406.8 383.1,406.9 387.5,407.0 392.0,407.2 396.4,407.2 400.8,407.3 405.3,407.4 409.7,407.5 414.1,407.5 418.6,407.6 423.0,407.6 423.0,408.0 221.9,408.0" fill="#2a78d6" opacity=".14"/>
+<line class="sk" x1="269.2" y1="384.2" x2="269.2" y2="408" stroke="#2a78d6" stroke-width="1" opacity=".3"/>
+<line class="sk" x1="316.6" y1="401.8" x2="316.6" y2="408" stroke="#2a78d6" stroke-width="1" opacity=".3"/>
+<polyline class="sk" points="221.9,274.2 269.2,274.2 269.2,384.2 316.6,384.2" fill="none" stroke="#2a78d6" stroke-width="1" opacity=".55"/>
+<polyline class="sk" points="221.9,384.2 269.2,384.2 269.2,401.8 316.6,401.8" fill="none" stroke="#2a78d6" stroke-width="1" opacity=".55"/>
+<polyline class="sk" points="80.0,161.8 127.3,164.2 174.6,179.2 221.9,274.2 269.2,384.2 316.6,401.8" fill="none" stroke="#2a78d6" stroke-width="2" stroke-linejoin="round"/>
+<polyline class="sk" points="316.6,401.8 321.0,402.4 325.4,403.1 329.9,403.6 334.3,404.1 338.7,404.5 343.2,404.9 347.6,405.3 352.0,405.6 356.5,405.8 360.9,406.1 365.3,406.3 369.8,406.5 374.2,406.6 378.6,406.8 383.1,406.9 387.5,407.0 392.0,407.2 396.4,407.2 400.8,407.3 405.3,407.4 409.7,407.5 414.1,407.5 418.6,407.6 423.0,407.6" fill="none" stroke="#2a78d6" stroke-width="2" stroke-dasharray="4 3" opacity=".8"/>
+<line class="rl" x1="511.0" y1="408.0" x2="854" y2="408.0" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="501" y="412" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">0</text>
+<line class="rl" x1="511.0" y1="352.5" x2="854" y2="352.5" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="501" y="357" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">250</text>
+<line class="rl" x1="511.0" y1="297.0" x2="854" y2="297.0" stroke="#e1e0d9" stroke-width="1"/>
+<text class="mut" x="501" y="301" fill="#898781" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" font-weight="400" text-anchor="end">500</text>
+<rect class="fill" x="700.2" y="352.5" width="153.8" height="55.5" fill="#2a78d6" opacity=".1"/>
+<line class="sk" x1="700.2" y1="352.5" x2="854.0" y2="352.5" stroke="#2a78d6" stroke-width="1" opacity=".22"/>
+<rect class="fill" x="747.6" y="297.0" width="106.4" height="55.5" fill="#2a78d6" opacity=".1"/>
+<line class="sk" x1="747.6" y1="297.0" x2="854.0" y2="297.0" stroke="#2a78d6" stroke-width="1" opacity=".22"/>
+<polygon class="fill" points="511.0,408.0 652.9,408.0 652.9,352.5 700.2,352.5 700.2,297.0 747.6,297.0 854.0,297.0 854.0,297.0 747.6,297.0 747.6,352.5 700.2,352.5 700.2,408.0 652.9,408.0 652.9,408.0 511.0,408.0" fill="#2a78d6" opacity=".14"/>
+<polyline class="sk" points="511.0,408.0 652.9,408.0 652.9,352.5 700.2,352.5 700.2,297.0 747.6,297.0 854.0,297.0" fill="none" stroke="#2a78d6" stroke-width="1.5" stroke-linejoin="round"/>
+<polyline class="sk" points="511.0,408.0 652.9,408.0 652.9,408.0 700.2,408.0 700.2,352.5 747.6,352.5 747.6,297.0 854.0,297.0" fill="none" stroke="#2a78d6" stroke-width="1.5" stroke-linejoin="round"/>
+<polyline class="sk2" points="511.0,408.0 652.9,408.0 854.0,172.2" fill="none" stroke="#eb6834" stroke-width="2" stroke-linejoin="round"/>
+<text class="mut" x="754" y="172" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="9.5" font-weight="400" text-anchor="start">unquoted</text>
+<line class="sk" x1="26" y1="460" x2="48" y2="460" stroke="#2a78d6" stroke-width="2"/>
+<text class="ink2" x="56" y="464" fill="#52514e" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">digital stacks  ·  call_hi / call_lo</text>
+<line class="sk2" x1="280" y1="460" x2="302" y2="460" stroke="#eb6834" stroke-width="2"/>
+<text class="ink2" x="310" y="464" fill="#52514e" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">true (S_T - K)+</text>
+<line class="sk" x1="421" y1="460" x2="443" y2="460" stroke="#2a78d6" stroke-width="2" stroke-dasharray="4 3"/>
+<text class="ink2" x="451" y="464" fill="#52514e" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">modelled tail</text>
+<text class="mut" x="26" y="490" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">left: the shaded area is C(K_atm) = int_K^inf D(u) du, ruled at every strike into the dK columns it is</text>
+<text class="mut" x="26" y="507" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">summed from. The staircase above the curve is the left-hand sum (call_hi), the one below it the</text>
+<text class="mut" x="26" y="524" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">right-hand sum (call_lo)</text>
+<text class="mut" x="26" y="541" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">right: dK digitals struck at each K_i super-replicate the call; the same widths struck one strike up</text>
+<text class="mut" x="26" y="558" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">sub-replicate it. The gap between them is the strike grid. Each slab is one digital's dK, and they stack</text>
+<text class="mut" x="26" y="575" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">into the staircase you collect</text>
+<text class="mut" x="26" y="592" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">past 64,750 the ladder stops: both stacks go flat, the payoff does not. That wedge is the tail model --</text>
+<text class="mut" x="26" y="609" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">5.1% of this call's value</text>
+<text class="mut" x="26" y="626" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">warning: dropped 74 of 80 threshold strikes pinned at the extreme tick; integrating their midpoints</text>
+<text class="mut" x="26" y="643" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">would have added ~$93 to every call. The region beyond the live quotes is the tail model's job now</text>
+</svg>

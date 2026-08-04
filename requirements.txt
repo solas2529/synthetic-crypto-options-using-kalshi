@@ -1,0 +1,4 @@
+# Only kalshi_client.py needs these -- the reconstruction library and the
+# offline selftest run on the standard library alone.
+requests>=2.31
+cryptography>=42.0
