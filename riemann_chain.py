@@ -50,7 +50,6 @@ __all__ = [
     "main",
 ]
 
-TailModel = Literal["none", "exponential"]
 Side = Literal["bid", "mid", "ask"]
 
 
@@ -79,6 +78,11 @@ def _xml_escape(s: str) -> str:
 _INK = {"ink": "#0b0b0b", "ink2": "#52514e", "mut": "#898781",
         "acc": "#2a78d6", "acc2": "#eb6834"}
 
+# CDF window the printed table and the figures' value blocks keep. Strikes
+# outside it are quoted but carry almost no mass, and listing them buries the
+# rows that matter under a wall of zeroes.
+_TABLE_BAND = 0.02
+
 _MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace"
 _SANS = "ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif"
 
@@ -91,6 +95,99 @@ def _text(x, y, s, cls, anchor="start", size=12.5, mono=True, weight=400) -> str
 
 def _pts(points: Iterable[tuple[float, float]]) -> str:
     return " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+
+
+def _value_table(chain, kind: Literal["call", "put"], pad: int, w: int,
+                 y0: float) -> tuple[list[str], float]:
+    """Per-strike values and greeks, drawn under the payoff panels.
+
+    The panels above argue about one strike; this says what every other rung is
+    worth.  Same numbers as the printed table and chain.svg -- the quote, the
+    implied distribution, the reconstructed option, its vol -- with the greeks
+    alongside, so the figure carries the whole chain rather than a headline.
+
+    Banded to `_TABLE_BAND` like the printed table, because the panels get the
+    *full* ladder (that is where the 'quotes stop here' line comes from) and a
+    live ladder can run hundreds of strikes whose rows would be all zeroes.
+    """
+    rows = [r for r in chain.rows if _TABLE_BAND <= r.cdf <= 1.0 - _TABLE_BAND]
+    hidden = len(chain.rows) - len(rows)
+    if not rows:                       # every strike is a wing; show them anyway
+        rows, hidden = list(chain.rows), 0
+    if not rows:
+        return [], 0.0
+
+    v = "C" if kind == "call" else "P"
+    cols = [  # key, label, width
+        ("strike", "strike", 84), ("dk", "D(K)", 60), ("cdf", "cdf", 58),
+        ("pdf", "pdf x1e6", 78), ("val", kind, 82), ("iv", "iv", 60),
+        ("delta", "delta", 68), ("gamma", "gamma x1e6", 84),
+        ("vega", "vega", 62), ("theta", "theta", 70), ("dual", f"d{v}/dK", 74),
+    ]
+    gut, rh, hh = 26, 22, 24
+    xs, run = {}, pad + gut
+    for k, _l, cw in cols:
+        xs[k] = (run, cw)
+        run += cw
+
+    atm = chain.atm()
+    o = [_text(pad, y0 + 12, f"every quoted strike in the "
+               f"{_TABLE_BAND:.0%}-{1 - _TABLE_BAND:.0%} CDF band", "ink2",
+               size=11, mono=False, weight=600)]
+    hy = y0 + 34
+    for k, label, cw in cols:
+        x0, _ = xs[k]
+        o.append(_text(x0 + cw - 10, hy, label, "mut", anchor="end",
+                       size=10, mono=False))
+    o.append(f'<line class="ax" x1="{pad}" y1="{hy + 8:.0f}" x2="{w - pad}" '
+             f'y2="{hy + 8:.0f}" stroke="#c3c2b7" stroke-width="1"/>')
+
+    body = hy + 8
+    for i, r in enumerate(rows):
+        g = chain.greeks(r, kind)
+        y = body + rh * i
+        base = y + rh - 7
+        if atm is not None and r.strike == atm.strike:
+            o.append(f'<rect class="hl" x="{pad}" y="{y:.0f}" width="{w - 2*pad}" '
+                     f'height="{rh}" rx="4" fill="#2a78d6" opacity=".07"/>')
+            o.append(f'<rect class="acc" x="{pad}" y="{y+3:.0f}" width="3" '
+                     f'height="{rh-6}" rx="1.5" fill="#2a78d6"/>')
+            o.append(_text(pad + 9, base, "ATM", "acc", size=8, mono=False, weight=600))
+        elif i:
+            o.append(f'<line class="rl" x1="{pad+gut}" y1="{y:.0f}" x2="{w-pad}" '
+                     f'y2="{y:.0f}" stroke="#e1e0d9" stroke-width="1"/>')
+
+        dash = "--"
+        vals = {
+            "strike": f"{r.strike:,.0f}",
+            "dk": f"{1.0 - r.cdf:.3f}",
+            "cdf": f"{r.cdf:.3f}",
+            "pdf": f"{r.pdf * 1e6:,.0f}",
+            "val": f"{(r.call if kind == 'call' else r.put):,.2f}"
+                   + ("*" if r.model_dependent else ""),
+            "iv": f"{r.iv * 100:.1f}%" if r.iv is not None else dash,
+            "delta": dash if g.delta is None else f"{g.delta:.3f}",
+            "gamma": dash if g.gamma is None else f"{g.gamma * 1e6:,.1f}",
+            "vega": dash if g.vega is None else f"{g.vega:,.2f}",
+            "theta": dash if g.theta is None else f"{g.theta:,.1f}",
+            "dual": f"{g.dual_delta:.3f}",
+        }
+        for k, _l, cw in cols:
+            x0, _ = xs[k]
+            # the strike derivative is the one column the ladder quotes outright,
+            # so it carries the digitals' blue here exactly as it does in the strip
+            cls = "acc" if k == "dual" else ("ink" if k in ("strike", "val") else "ink2")
+            o.append(_text(x0 + cw - 10, base, vals[k], cls, anchor="end",
+                           size=11.5, weight=600 if k == "strike" else 400))
+
+    h = (body + rh * len(rows)) - y0 + 6
+    if hidden:
+        o.append(_text(pad, y0 + h + 6, f"({hidden} strike"
+                       f"{'' if hidden == 1 else 's'} outside the band hidden; the "
+                       f"panels above still use the full ladder)", "mut",
+                       size=10, mono=False))
+        h += 18
+    return o, h
 
 
 def _greek_cells(g) -> list[tuple[str, str, bool]]:
@@ -588,7 +685,9 @@ class OptionChain:
         foot += [f"warning:  {x}" for x in self.warnings]
         wrapped = _wrap(foot)
 
-        leg_y = py1 + ax_b + 24
+        tbl_y = py1 + ax_b + 22
+        tbl, tbl_h = _value_table(self, "call", pad, w, tbl_y)
+        leg_y = tbl_y + tbl_h + 30
         h = leg_y + 22 + 17 * len(wrapped) + pad
 
         o: list[str] = [
@@ -779,6 +878,9 @@ class OptionChain:
         if tail_ext > 0:
             o.append(_text(X(pxb, ktop) + 6, py0 + 14, "unquoted", "mut", size=9.5, mono=False))
 
+        # ---- per-strike values and greeks ---------------------------------------
+        o += tbl
+
         # ---- legend -------------------------------------------------------------
         lx = pad
         for cls, dash, label in (
@@ -906,7 +1008,9 @@ class OptionChain:
         foot += [f"warning:  {x}" for x in self.warnings]
         wrapped = _wrap(foot)
 
-        leg_y = py1 + ax_b + 24
+        tbl_y = py1 + ax_b + 22
+        tbl, tbl_h = _value_table(self, "put", pad, w, tbl_y)
+        leg_y = tbl_y + tbl_h + 30
         h = leg_y + 22 + 17 * len(wrapped) + pad
 
         o: list[str] = [
@@ -1099,6 +1203,9 @@ class OptionChain:
             o.append(_text(X(pxb, kmin) - 6, py0 + 14, "unquoted", "mut", size=9.5,
                            mono=False, anchor="end"))
 
+        # ---- per-strike values and greeks ---------------------------------------
+        o += tbl
+
         # ---- legend -------------------------------------------------------------
         lx = pad
         for cls, dash, label in (
@@ -1133,6 +1240,10 @@ _BELOW = {"less", "less_or_equal", "below"}
 # Kalshi quotes in whole cents, so 0.01 is the finest a book can express.
 _TICK = 0.01
 
+# A book wider than this carries no usable level -- a 0.00/1.00 quote has a 0.50
+# midpoint that is pure fiction. Dropped unless a real trade gives us a price.
+_MAX_SPREAD = 0.90
+
 # Most strikes `_upper_tail` will regress over. Wide enough to see through tick
 # quantisation, short enough that the fit stays local to the wing.
 _TAIL_FIT_MAX = 16
@@ -1156,7 +1267,7 @@ def _prob(market: dict, *keys: str) -> float | None:
     return None
 
 
-def _quote(market: dict, max_spread: float) -> tuple[float, float] | None:
+def _quote(market: dict) -> tuple[float, float] | None:
     """(bid, ask) for the YES side as probabilities, or None if unquotable."""
     bid = _prob(market, "yes_bid_dollars", "yes_bid")
     ask = _prob(market, "yes_ask_dollars", "yes_ask")
@@ -1187,7 +1298,7 @@ def _quote(market: dict, max_spread: float) -> tuple[float, float] | None:
     # A book quoted 0.00 / 1.00 carries no information; its 0.50 midpoint is
     # pure fiction and would bend the whole survival curve. Drop it unless a
     # real trade gives us a level.
-    if ask - bid > max_spread:
+    if ask - bid > _MAX_SPREAD:
         if last is not None and 0.0 < last < 1.0:
             bid = ask = last
         else:
@@ -1198,7 +1309,6 @@ def _quote(market: dict, max_spread: float) -> tuple[float, float] | None:
 
 def digitals_from_markets(
     markets: Iterable[dict],
-    max_spread: float = 0.90,
     warnings: list[str] | None = None,
     drop_pinned: bool = True,
 ) -> list[Digital]:
@@ -1226,7 +1336,7 @@ def digitals_from_markets(
     bins: list[tuple[float, float, float, float, dict]] = []  # floor, cap, bid, ask, mkt
 
     for m in markets:
-        q = _quote(m, max_spread)
+        q = _quote(m)
         if q is None:
             continue
         bid, ask = q
@@ -1576,8 +1686,6 @@ def build_chain(
     now: datetime | None = None,
     rate: float = 0.0,
     side: Side = "mid",
-    tail: TailModel = "exponential",
-    repair: bool = True,
     min_strikes: int = 3,
 ) -> OptionChain:
     """Riemann-integrate a ladder of Kalshi binaries into a vanilla chain.
@@ -1591,12 +1699,14 @@ def build_chain(
                  far inside the tick.
         side:    which digital quote drives the integral.  'bid' and 'ask' give
                  you an executable band around the 'mid' chain.
-        tail:    'exponential' fits decay to the last two points and adds the
-                 mass beyond the quoted ladder; 'none' truncates it (and biases
-                 the forward and every call low).
-        repair:  enforce a non-increasing D(K) before integrating.
         min_strikes: below this many usable strikes, return an empty chain
                  rather than a fake one.
+
+    The tail is always fitted (exponential decay off the last two points) and
+    D(K) is always PAVA-repaired before integrating.  Both used to be switchable
+    and neither switch was ever worth throwing: truncating the tail biases the
+    forward and every call low, and integrating a non-monotone D(K) produces
+    negative densities downstream.
 
     Returns:
         OptionChain, one row per strike, plus the implied forward and any
@@ -1642,22 +1752,21 @@ def build_chain(
     strikes = [d.strike for d in digitals]
     surv = [max(0.0, min(1.0, d.price(side))) for d in digitals]
 
-    if repair:
-        fixed = _monotone_decreasing(surv)
-        if any(abs(a - b) > 1e-9 for a, b in zip(surv, fixed)):
-            warnings.append("digital curve was not monotone; PAVA-repaired before integrating")
-        surv = fixed
+    fixed = _monotone_decreasing(surv)
+    if any(abs(a - b) > 1e-9 for a, b in zip(surv, fixed)):
+        warnings.append("digital curve was not monotone; PAVA-repaired before integrating")
+    surv = fixed
 
     # ---- tails -----------------------------------------------------------
     # Upper: int_{K_n}^inf S(u) du.  Lower: int_0^{K_0} S(u) du, which is K_0
     # minus whatever mass already sits below the bottom quoted strike.
-    upper_tail = _upper_tail(strikes, surv, tail)
-    lower_tail = _lower_tail(strikes, surv, tail)
+    upper_tail = _upper_tail(strikes, surv)
+    lower_tail = _lower_tail(strikes, surv)
     truncated = (1.0 - surv[0]) + surv[-1]
     if truncated > 0.05:
         warnings.append(
             f"{truncated:.1%} of probability mass sits outside the quoted strikes; "
-            f"forward and wing calls lean on the {tail} tail"
+            f"forward and wing calls lean on the fitted tail"
         )
 
     n = len(strikes)
@@ -1737,7 +1846,7 @@ def build_chain(
     )
 
 
-def _upper_tail(strikes: Sequence[float], surv: Sequence[float], tail: TailModel) -> float:
+def _upper_tail(strikes: Sequence[float], surv: Sequence[float]) -> float:
     """int_{K_n}^inf S(u) du, assuming S decays exponentially past the last strike.
 
     The decay rate comes from a log-linear least-squares fit over the last few
@@ -1754,7 +1863,7 @@ def _upper_tail(strikes: Sequence[float], surv: Sequence[float], tail: TailModel
     window back until the curve has actually halved.
     """
     s_last = surv[-1]
-    if tail == "none" or s_last <= 1e-9:
+    if s_last <= 1e-9:
         return 0.0
 
     live = [(k, s) for k, s in zip(strikes, surv) if s > 1e-9]
@@ -1780,17 +1889,13 @@ def _upper_tail(strikes: Sequence[float], surv: Sequence[float], tail: TailModel
     return s_last * lam
 
 
-def _lower_tail(strikes: Sequence[float], surv: Sequence[float], tail: TailModel) -> float:
+def _lower_tail(strikes: Sequence[float], surv: Sequence[float]) -> float:
     """int_0^{K_0} S(u) du -- what sits below the bottom quoted strike.
 
     For a ladder that brackets the market, S ~ 1 down there and the integral is
     just K_0; the correction is the little mass already below K_0.
     """
     below = 1.0 - surv[0]
-    if tail == "none":
-        # Refuse to extrapolate: hold S flat at its lowest quoted level. That
-        # understates the forward, which is the honest direction to be wrong in.
-        return strikes[0] * surv[0]
     if below <= 1e-9:
         return strikes[0]
     s_next = surv[1]
@@ -2418,6 +2523,48 @@ def selftest() -> int:
               f"five greeks, with {sym} printed to 4dp")
         ok &= drawn and exact
 
+    print("\n17. the payoff figures carry every banded strike, not just the ATM row")
+    for label, svg, sym in (("call", gch.format_payoff_svg(), "dC/dK"),
+                            ("put", gch.format_put_payoff_svg(), "dP/dK")):
+        root = ET.fromstring(svg)
+        cells = [t.text for t in root.iter("{http://www.w3.org/2000/svg}text")]
+        heads = ["strike", "D(K)", "cdf", "pdf x1e6", label, "iv", "delta",
+                 "gamma x1e6", "vega", "theta", sym]
+        got_heads = all(hd in cells for hd in heads)
+        print(f"  [{'PASS' if got_heads else 'FAIL'}] {label}.svg heads all "
+              f"{len(heads)} columns")
+        ok &= got_heads
+
+        banded = [r for r in gch.rows if _TABLE_BAND <= r.cdf <= 1.0 - _TABLE_BAND]
+        rows_drawn = all(f"{r.strike:,.0f}" in cells for r in banded)
+        print(f"  [{'PASS' if rows_drawn else 'FAIL'}] all {len(banded)} banded "
+              f"strikes have a row (of {len(gch.rows)} quoted)")
+        ok &= rows_drawn
+
+        # The exactness claim, made checkable in the drawing itself: the strike
+        # derivative column has to reproduce the quote column it is derived from,
+        # negated for the call and as-is for the put, on every single row.
+        want = [(f"{-(1.0 - r.cdf):.3f}" if label == "call" else f"{r.cdf:.3f}")
+                for r in banded]
+        agrees = all(v in cells for v in want)
+        print(f"  [{'PASS' if agrees else 'FAIL'}] every {sym} cell equals "
+              f"{'-D(K)' if label == 'call' else 'Q(S <= K)'} on the same row")
+        ok &= agrees
+
+        # Values worth printing have to be the chain's own, not re-derived.
+        vals = [f"{(r.call if label == 'call' else r.put):,.2f}" for r in banded
+                if not r.model_dependent]
+        carried = all(v in cells for v in vals)
+        print(f"  [{'PASS' if carried else 'FAIL'}] every {label} value matches "
+              f"the chain's own column")
+        ok &= carried
+
+    # Parity across the two figures' tables, read off the rendered numbers.
+    band = [r for r in gch.rows if _TABLE_BAND <= r.cdf <= 1.0 - _TABLE_BAND]
+    worst = max(abs((r.call - r.put) - gch.discount * (gch.forward - r.strike))
+                for r in band)
+    ok &= _check("call - put == DF(F - K) across every banded row", worst, 0.0, 1e-6)
+
     print("\n" + ("ALL CHECKS PASSED" if ok else "SOME CHECKS FAILED"))
     return 0 if ok else 1
 
@@ -2431,7 +2578,6 @@ def selftest() -> int:
 # already right for these markets -- mid quotes, exponential tails, zero carry.
 
 _CONFIG = "config.ini"
-_TABLE_BAND = 0.02          # CDF window the printed table and chain.svg keep
 _MAX_EVENTS = 24            # expiries offered per coin
 
 # Only threshold ladders ("above/below") reach the menu.  `digitals_from_markets`
