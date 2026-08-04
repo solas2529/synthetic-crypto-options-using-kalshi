@@ -6,57 +6,71 @@ prediction markets — no options exchange involved.*
 Kalshi's crypto markets are cash-or-nothing **digital options**. A market paying
 \$1 if BTC settles above K prices the risk-neutral survival probability
 
-```
-D(K) = Q(S_T > K)
-```
+$$D(K) \;=\; \mathbb{Q}(S_T > K)$$
 
 and vanilla options are the integral of that curve:
 
-```
-C(K) = E[(S_T − K)⁺] = ∫_K^∞ Q(S_T > u) du
-P(K) = E[(K − S_T)⁺] = ∫_0^K Q(S_T ≤ u) du
-F    = E[S_T]        = ∫_0^∞ Q(S_T > u) du
-```
+$$
+\begin{aligned}
+C(K) &= \mathbb{E}\big[(S_T-K)^+\big] &&= \int_K^{\infty} \mathbb{Q}(S_T > u)\,du \\[2pt]
+P(K) &= \mathbb{E}\big[(K-S_T)^+\big] &&= \int_0^{K} \mathbb{Q}(S_T \le u)\,du \\[2pt]
+F    &= \mathbb{E}[S_T]               &&= \int_0^{\infty} \mathbb{Q}(S_T > u)\,du
+\end{aligned}
+$$
 
 That first line is the only step doing real work, and it is just the tail formula
-`E[X] = ∫_0^∞ Q(X > y) dy` applied to the payoff itself:
+$\mathbb{E}[X]=\int_0^{\infty}\mathbb{Q}(X>y)\,dy$ applied to the payoff itself:
 
-```
-E[(S_T − K)⁺] = ∫_0^∞ Q((S_T − K)⁺ > y) dy = ∫_0^∞ Q(S_T > K + y) dy
-              = ∫_K^∞ Q(S_T > u) du
-```
+$$
+\mathbb{E}\big[(S_T-K)^+\big]
+\;=\; \int_0^{\infty} \mathbb{Q}\big((S_T-K)^+ > y\big)\,dy
+\;=\; \int_0^{\infty} \mathbb{Q}(S_T > K+y)\,dy
+\;=\; \int_K^{\infty} \mathbb{Q}(S_T > u)\,du
+$$
 
 A vanilla *is* a stack of digitals, and the ladder quotes the integrand.
 
 ## The sum
 
 So a Kalshi strike ladder already is a discretised call chain — all that is left
-is to sum it. Write the quoted strikes `K_0 < … < K_{n−1}`, the digital levels
-`D_i = D(K_i)`, and the gaps `ΔK_i = K_{i+1} − K_i`. With `i` running from `j` to
-`n−2`, and `T` the modelled mass above the top strike:
+is to sum it. Write the quoted strikes $K_0 < \dots < K_{n-1}$, the digital levels
+$D_i = D(K_i)$, the gaps $\Delta K_i = K_{i+1}-K_i$, and let $T$ be the modelled
+mass above the top strike:
 
-```
-call_hi(K_j) = Σ  D_i     · ΔK_i  +  T          left rule, plus the tail
-call_lo(K_j) = Σ  D_{i+1} · ΔK_i                right rule, tail discarded
-call(K_j)    = Σ  ½(D_i + D_{i+1}) · ΔK_i  +  T trapezoid — the point estimate
+$$
+\begin{aligned}
+C_{\text{hi}}(K_j) &= \sum_{i=j}^{n-2} D_i\,\Delta K_i \;+\; T
+  &&\text{left rule, plus the tail} \\[4pt]
+C_{\text{lo}}(K_j) &= \sum_{i=j}^{n-2} D_{i+1}\,\Delta K_i
+  &&\text{right rule, tail discarded} \\[4pt]
+C^{\ast}(K_j)      &= \sum_{i=j}^{n-2} \tfrac{1}{2}\big(D_i + D_{i+1}\big)\Delta K_i \;+\; T
+  &&\text{trapezoid — the point estimate} \\[4pt]
+\text{band}        &= C_{\text{hi}} - C_{\text{lo}}
+                    = \sum_{i=j}^{n-2} \big(D_i - D_{i+1}\big)\Delta K_i \;+\; T
+\end{aligned}
+$$
 
-band         = call_hi − call_lo = Σ (D_i − D_{i+1}) · ΔK_i  +  T
-```
+These are `call_hi`, `call_lo`, `call` and `band` in the output. $D$ is
+non-increasing, so the left rule over-counts and the right rule under-counts and
+the ladder brackets the call for free. $C_{\text{lo}}$ drops $T$ on purpose:
+discarding mass above the top strike can only shrink $\mathbb{E}[(S_T-K)^+]$,
+which makes it a bound that assumes nothing. There is no matching rigorous upper
+bound, since unquoted mass can sit arbitrarily far out — so $C_{\text{hi}}$
+carries the modelled tail and is an estimate. Everything else falls out of the
+same curve:
 
-`D` is non-increasing, so the left rule over-counts and the right rule
-under-counts and the ladder brackets the call for free. `call_lo` drops `T` on
-purpose: discarding mass above the top strike can only shrink `E[(S−K)⁺]`, which
-makes it a bound that assumes nothing. There is no matching rigorous upper bound,
-since unquoted mass can sit arbitrarily far out — so `call_hi` carries the
-modelled tail and is an estimate. Everything else falls out of the same curve:
-
-```
-F        = call(K_0) + L,     L = ∫_0^{K_0} D(u) du   the mass below the ladder
-C(K_j)   = DF · call(K_j)
-P(K_j)   = C(K_j) − DF·(F − K_j)                      parity, same curve
-cdf_i    = 1 − D_i
-pdf(K_i) = (D_{i−1} − D_{i+1}) / (K_{i+1} − K_{i−1})  one-sided at the ends
-```
+$$
+\begin{aligned}
+F &= C^{\ast}(K_0) + L, \qquad L = \int_0^{K_0} D(u)\,du
+  &&\text{the mass below the ladder} \\[4pt]
+C(K_j) &= \mathrm{DF}\cdot C^{\ast}(K_j) \\[4pt]
+P(K_j) &= C(K_j) - \mathrm{DF}\cdot\big(F - K_j\big)
+  &&\text{parity, same curve} \\[4pt]
+\mathrm{cdf}_i &= 1 - D_i \\[4pt]
+f(K_i) &= \frac{D_{i-1} - D_{i+1}}{K_{i+1} - K_{i-1}}
+  &&\text{one-sided at the ends}
+\end{aligned}
+$$
 
 `build_chain` computes exactly these, cumulating downward from the top strike so
 each `C(K_j)` reuses the sum above it, and hands back strikes, the implied CDF
@@ -196,19 +210,25 @@ lower tail, and it is worth exactly the chain's put at the bottom strike, since
 `P(K_0)` *is* the whole area below the ladder.
 
 Both payoff figures carry a **greeks strip** under the price row, and it is split
-on purpose. Differentiating `C(K) = DF ∫_K^∞ Q(S_T > u) du` *in the strike* hands
+on purpose. Differentiating
+$C(K)=\mathrm{DF}\int_K^{\infty}\mathbb{Q}(S_T>u)\,du$ *in the strike* hands
 back the integrand:
 
-```
-dC/dK   = −DF · Q(S_T > K)          d²C/dK² = DF · f(K)
-```
+$$
+\frac{\partial C}{\partial K} = -\,\mathrm{DF}\cdot\mathbb{Q}(S_T > K)
+\qquad\qquad
+\frac{\partial^2 C}{\partial K^2} = \mathrm{DF}\cdot f(K)
+$$
 
 which is Breeden–Litzenberger read backwards. Both sides of that are already on
 the ladder — they are the `digital_mid` and `pdf` columns in different units — so
-`dC/dK` is **exact**, needs no vol, and stays right where the smile is wrong. It
-is drawn in the digitals' own blue, and it is the slope of the very curve the
-left panel plots. The put's mirror is `dP/dK = +DF · Q(S_T ≤ u)`, its own left
-panel, and parity pins them: `dC/dK − dP/dK = −DF` exactly.
+$\partial C/\partial K$ is **exact**, needs no vol, and stays right where the
+smile is wrong. It is drawn in the digitals' own blue, and it is the slope of the
+very curve the left panel plots. The put's mirror is
+$\partial P/\partial K = +\mathrm{DF}\cdot\mathbb{Q}(S_T \le K)$, its own left
+panel, and parity pins them:
+
+$$\frac{\partial C}{\partial K} - \frac{\partial P}{\partial K} = -\,\mathrm{DF}$$
 
 Delta, gamma, vega and theta differentiate in `F`, `σ` and `t` instead — none of
 which one expiry's strike ladder pins down, since the quotes fix the
@@ -305,7 +325,7 @@ real order book.
 - **Threshold ladders must have their dead wings dropped.** The same tick
   artefact bites the `greater`/`less` series (`KXBTCD`) a different way. A
   far-OTM strike quoted 0.00 / 0.01 has a 0.005 midpoint, and `D(K)` gets
-  *integrated*: a 189-strike ladder running $9,500 past the money at 100-wide
+  *integrated*: a 189-strike ladder running \$9,500 past the money at 100-wide
   strikes adds `0.005 × 9,500 = $47.50` to every call on the board. The forward
   survives — the upper wing's floor and the lower wing's 0.995 ceiling cancel —
   so the tell is that `cdf`/`pdf` imply one vol (~26%) and the `call` column
