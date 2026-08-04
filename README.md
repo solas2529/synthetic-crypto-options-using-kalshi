@@ -18,9 +18,50 @@ P(K) = E[(K − S_T)⁺] = ∫_0^K Q(S_T ≤ u) du
 F    = E[S_T]        = ∫_0^∞ Q(S_T > u) du
 ```
 
-So a Kalshi strike ladder already *is* a discretised call chain. `build_chain`
-does the Riemann sum and hands back strikes, an implied CDF and density, synthetic
-call/put values, an implied forward, and Black-76 implied vols.
+That first line is the only step doing real work, and it is just the tail formula
+`E[X] = ∫_0^∞ Q(X > y) dy` applied to the payoff itself:
+
+```
+E[(S_T − K)⁺] = ∫_0^∞ Q((S_T − K)⁺ > y) dy = ∫_0^∞ Q(S_T > K + y) dy
+              = ∫_K^∞ Q(S_T > u) du
+```
+
+A vanilla *is* a stack of digitals, and the ladder quotes the integrand.
+
+## The sum
+
+So a Kalshi strike ladder already is a discretised call chain — all that is left
+is to sum it. Write the quoted strikes `K_0 < … < K_{n−1}`, the digital levels
+`D_i = D(K_i)`, and the gaps `ΔK_i = K_{i+1} − K_i`. With `i` running from `j` to
+`n−2`, and `T` the modelled mass above the top strike:
+
+```
+call_hi(K_j) = Σ  D_i     · ΔK_i  +  T          left rule, plus the tail
+call_lo(K_j) = Σ  D_{i+1} · ΔK_i                right rule, tail discarded
+call(K_j)    = Σ  ½(D_i + D_{i+1}) · ΔK_i  +  T trapezoid — the point estimate
+
+band         = call_hi − call_lo = Σ (D_i − D_{i+1}) · ΔK_i  +  T
+```
+
+`D` is non-increasing, so the left rule over-counts and the right rule
+under-counts and the ladder brackets the call for free. `call_lo` drops `T` on
+purpose: discarding mass above the top strike can only shrink `E[(S−K)⁺]`, which
+makes it a bound that assumes nothing. There is no matching rigorous upper bound,
+since unquoted mass can sit arbitrarily far out — so `call_hi` carries the
+modelled tail and is an estimate. Everything else falls out of the same curve:
+
+```
+F        = call(K_0) + L,     L = ∫_0^{K_0} D(u) du   the mass below the ladder
+C(K_j)   = DF · call(K_j)
+P(K_j)   = C(K_j) − DF·(F − K_j)                      parity, same curve
+cdf_i    = 1 − D_i
+pdf(K_i) = (D_{i−1} − D_{i+1}) / (K_{i+1} − K_{i−1})  one-sided at the ends
+```
+
+`build_chain` computes exactly these, cumulating downward from the top strike so
+each `C(K_j)` reuses the sum above it, and hands back strikes, the implied CDF
+and density, synthetic call/put values, the implied forward, Black-76 implied
+vols and the greeks.
 
 ## Setup
 
