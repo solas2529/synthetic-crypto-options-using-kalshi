@@ -1,4 +1,7 @@
-# Kalshi → vanilla options chain
+# Synthetic Crypto Options Using Kalshi
+
+*Vanilla calls, puts, implied vols and greeks, reconstructed from binary
+prediction markets — no options exchange involved.*
 
 Kalshi's crypto markets are cash-or-nothing **digital options**. A market paying
 \$1 if BTC settles above K prices the risk-neutral survival probability
