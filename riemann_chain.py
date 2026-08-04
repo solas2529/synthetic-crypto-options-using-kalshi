@@ -172,8 +172,6 @@ class Digital:
     bid: float
     ask: float
     ticker: str = ""
-    volume: int = 0
-    open_interest: int = 0
     mid_override: float | None = None
 
     @property
@@ -206,8 +204,6 @@ class ChainRow:
     iv: float | None     # Black-76 implied vol from `call`, None if inversion fails
     tail_weight: float = 0.0  # fraction of `call` coming from the extrapolated tail
     ticker: str = ""
-    volume: int = 0
-    open_interest: int = 0
 
     @property
     def call_spread_width(self) -> float:
@@ -253,11 +249,6 @@ class Greeks:
     dual_delta: float         # dC/dK, exact: -DF x the digital quote
     dual_gamma: float         # d2C/dK2, exact: DF x the density
     kind: Literal["call", "put"] = "call"
-
-    @property
-    def model_free(self) -> tuple[float, float]:
-        """The two that need no model, in (dC/dK, d2C/dK2) order."""
-        return self.dual_delta, self.dual_gamma
 
 
 @dataclass
@@ -1165,18 +1156,6 @@ def _prob(market: dict, *keys: str) -> float | None:
     return None
 
 
-def _as_int(market: dict, *keys: str) -> int:
-    for k in keys:
-        v = market.get(k)
-        if v is None or v == "":
-            continue
-        try:
-            return int(float(v))
-        except (TypeError, ValueError):
-            continue
-    return 0
-
-
 def _quote(market: dict, max_spread: float) -> tuple[float, float] | None:
     """(bid, ask) for the YES side as probabilities, or None if unquotable."""
     bid = _prob(market, "yes_bid_dollars", "yes_bid")
@@ -1330,8 +1309,6 @@ def _mk(strike: float, bid: float, ask: float, m: dict, mid: float | None = None
         bid=max(0.0, min(1.0, bid)),
         ask=max(0.0, min(1.0, ask)),
         ticker=str(m.get("ticker", "")),
-        volume=_as_int(m, "volume", "volume_fp"),
-        open_interest=_as_int(m, "open_interest", "open_interest_fp"),
         mid_override=None if mid is None else max(0.0, min(1.0, mid)),
     )
 
@@ -1742,8 +1719,6 @@ def build_chain(
                 iv=_implied_vol(c, forward, strikes[i], tau, df) if tau > 0 else None,
                 tail_weight=(upper_tail / call_mid[i]) if call_mid[i] > 1e-12 else 0.0,
                 ticker=d.ticker,
-                volume=d.volume,
-                open_interest=d.open_interest,
             )
         )
 
@@ -2001,7 +1976,7 @@ def selftest() -> int:
     print("\n7. Kalshi market-dict ingest: above / below / between")
     mkts = [
         {"ticker": "A", "strike_type": "greater", "floor_strike": 100_000,
-         "yes_bid": 48, "yes_ask": 52, "volume": 10, "open_interest": 5},
+         "yes_bid": 48, "yes_ask": 52},
         {"ticker": "B", "strike_type": "less", "cap_strike": 95_000,
          "yes_bid": 20, "yes_ask": 24},  # P(S<95k) in [.20,.24] -> D(95k) in [.76,.80]
     ]
