@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 842 779" width="842" height="779" role="img" aria-label="Reconstructed option chain for KXBTCD-26AUG0717">
+<style>
+svg{color-scheme:light dark}
+.p{fill:#f9f9f7}.c{fill:#fcfcfb}.ink{fill:#0b0b0b}.ink2{fill:#52514e}
+.mut{fill:#898781}.acc{fill:#2a78d6}.bar{fill:#2a78d6}.trk{fill:#e1e0d9}
+.rl{stroke:#e1e0d9}.ax{stroke:#c3c2b7}.hl{fill:#2a78d6;opacity:.07}
+.rg{stroke:rgba(11,11,11,.10)}
+@media(prefers-color-scheme:dark){
+.p{fill:#0d0d0d}.c{fill:#1a1a19}.ink{fill:#fff}.ink2{fill:#c3c2b7}
+.mut{fill:#898781}.acc{fill:#3987e5}.bar{fill:#3987e5}.trk{fill:#2c2c2a}
+.rl{stroke:#2c2c2a}.ax{stroke:#383835}.hl{fill:#3987e5;opacity:.12}
+.rg{stroke:rgba(255,255,255,.10)}}
+</style>
+<rect class="p" width="842" height="779" fill="#f9f9f7"/>
+<rect class="c rg" x="13" y="13" width="816" height="753" rx="10" fill="#fcfcfb" stroke="rgba(11,11,11,.10)"/>
+<text class="ink" x="26" y="52" fill="#0b0b0b" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="17" font-weight="600" text-anchor="start">KXBTCD-26AUG0717</text>
+<text class="mut" x="26" y="71" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="11.5" font-weight="400" text-anchor="start">18 strikes reconstructed from Kalshi binaries   ·   expiry 2026-08-07 21:00 UTC   ·   tau 64.43h</text>
+<text class="mut" x="26" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">forward</text>
+<text class="ink" x="26" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">64,189.72</text>
+<text class="mut" x="168" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">ATM IV</text>
+<text class="ink" x="168" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">36.1%</text>
+<text class="mut" x="290" y="99" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">tail mass</text>
+<text class="ink" x="290" y="121" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="19" font-weight="600" text-anchor="start">2.00%</text>
+<text class="mut" x="124" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">strike</text>
+<text class="mut" x="178" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">bid</text>
+<text class="mut" x="232" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">mid</text>
+<text class="mut" x="286" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">ask</text>
+<text class="mut" x="344" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">cdf</text>
+<text class="mut" x="412" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">pdf x1e6</text>
+<text class="mut" x="422" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">density</text>
+<text class="mut" x="602" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">call</text>
+<text class="mut" x="666" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">band</text>
+<text class="mut" x="744" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">put</text>
+<text class="mut" x="806" y="152" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="end">iv</text>
+<line class="ax" x1="26" y1="158" x2="816" y2="158" stroke="#c3c2b7" stroke-width="1"/>
+<text class="ink" x="124" y="182" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">59,500</text>
+<text class="ink2" x="178" y="182" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.960</text>
+<text class="ink2" x="232" y="182" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.975</text>
+<text class="ink2" x="286" y="182" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.990</text>
+<text class="ink2" x="344" y="182" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.025</text>
+<text class="ink2" x="412" y="182" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">20</text>
+<rect class="trk" x="422" y="175" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="175" width="8.5" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="182" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">4,740.98</text>
+<text class="ink2" x="666" y="182" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">524.73</text>
+<text class="ink" x="744" y="182" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">51.25</text>
+<text class="ink2" x="806" y="182" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">52.2%</text>
+<line class="rl" x1="52" y1="191" x2="816" y2="191" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="209" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">60,000</text>
+<text class="ink2" x="178" y="209" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.950</text>
+<text class="ink2" x="232" y="209" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.965</text>
+<text class="ink2" x="286" y="209" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.980</text>
+<text class="ink2" x="344" y="209" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.035</text>
+<text class="ink2" x="412" y="209" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">15</text>
+<rect class="trk" x="422" y="202" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="202" width="6.4" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="209" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">4,255.98</text>
+<text class="ink2" x="666" y="209" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">519.73</text>
+<text class="ink" x="744" y="209" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">66.25</text>
+<text class="ink2" x="806" y="209" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">50.1%</text>
+<line class="rl" x1="52" y1="218" x2="816" y2="218" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="236" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">60,500</text>
+<text class="ink2" x="178" y="236" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.950</text>
+<text class="ink2" x="232" y="236" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.955</text>
+<text class="ink2" x="286" y="236" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.960</text>
+<text class="ink2" x="344" y="236" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.040</text>
+<text class="ink2" x="412" y="236" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">5</text>
+<rect class="trk" x="422" y="229" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="229" width="2.1" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="236" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">3,774.73</text>
+<text class="ink2" x="666" y="236" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">517.23</text>
+<text class="ink" x="744" y="236" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">85.00</text>
+<text class="ink2" x="806" y="236" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">47.8%</text>
+<line class="rl" x1="52" y1="245" x2="816" y2="245" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="263" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">61,000</text>
+<text class="ink2" x="178" y="263" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.960</text>
+<text class="ink2" x="232" y="263" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.965</text>
+<text class="ink2" x="286" y="263" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.970</text>
+<text class="ink2" x="344" y="263" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.040</text>
+<text class="ink2" x="412" y="263" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">35</text>
+<rect class="trk" x="422" y="256" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="256" width="14.9" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="263" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">3,294.73</text>
+<text class="ink2" x="666" y="263" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">517.23</text>
+<text class="ink" x="744" y="263" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">105.00</text>
+<text class="ink2" x="806" y="263" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">45.0%</text>
+<line class="rl" x1="52" y1="272" x2="816" y2="272" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="290" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">61,500</text>
+<text class="ink2" x="178" y="290" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.920</text>
+<text class="ink2" x="232" y="290" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.925</text>
+<text class="ink2" x="286" y="290" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.930</text>
+<text class="ink2" x="344" y="290" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.075</text>
+<text class="ink2" x="412" y="290" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">65</text>
+<rect class="trk" x="422" y="283" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="283" width="27.7" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="290" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">2,823.48</text>
+<text class="ink2" x="666" y="290" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">499.73</text>
+<text class="ink" x="744" y="290" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">133.75</text>
+<text class="ink2" x="806" y="290" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">42.4%</text>
+<line class="rl" x1="52" y1="299" x2="816" y2="299" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="317" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">62,000</text>
+<text class="ink2" x="178" y="317" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.890</text>
+<text class="ink2" x="232" y="317" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.895</text>
+<text class="ink2" x="286" y="317" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.900</text>
+<text class="ink2" x="344" y="317" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.105</text>
+<text class="ink2" x="412" y="317" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">90</text>
+<rect class="trk" x="422" y="310" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="310" width="38.3" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="317" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">2,368.48</text>
+<text class="ink2" x="666" y="317" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">484.73</text>
+<text class="ink" x="744" y="317" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">178.75</text>
+<text class="ink2" x="806" y="317" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">40.2%</text>
+<line class="rl" x1="52" y1="326" x2="816" y2="326" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="344" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">62,500</text>
+<text class="ink2" x="178" y="344" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.830</text>
+<text class="ink2" x="232" y="344" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.835</text>
+<text class="ink2" x="286" y="344" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.840</text>
+<text class="ink2" x="344" y="344" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.165</text>
+<text class="ink2" x="412" y="344" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">140</text>
+<rect class="trk" x="422" y="337" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="337" width="59.7" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="344" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">1,935.98</text>
+<text class="ink2" x="666" y="344" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">454.73</text>
+<text class="ink" x="744" y="344" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">246.25</text>
+<text class="ink2" x="806" y="344" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">38.4%</text>
+<line class="rl" x1="52" y1="353" x2="816" y2="353" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="371" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">63,000</text>
+<text class="ink2" x="178" y="371" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.750</text>
+<text class="ink2" x="232" y="371" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.755</text>
+<text class="ink2" x="286" y="371" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.760</text>
+<text class="ink2" x="344" y="371" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.245</text>
+<text class="ink2" x="412" y="371" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">185</text>
+<rect class="trk" x="422" y="364" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="364" width="78.8" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="371" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">1,538.48</text>
+<text class="ink2" x="666" y="371" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">414.73</text>
+<text class="ink" x="744" y="371" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">348.75</text>
+<text class="ink2" x="806" y="371" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">37.1%</text>
+<line class="rl" x1="52" y1="380" x2="816" y2="380" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="398" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">63,500</text>
+<text class="ink2" x="178" y="398" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.640</text>
+<text class="ink2" x="232" y="398" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.650</text>
+<text class="ink2" x="286" y="398" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.660</text>
+<text class="ink2" x="344" y="398" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.350</text>
+<text class="ink2" x="412" y="398" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">215</text>
+<rect class="trk" x="422" y="391" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="391" width="91.6" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="398" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">1,187.23</text>
+<text class="ink2" x="666" y="398" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">362.23</text>
+<text class="ink" x="744" y="398" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">497.50</text>
+<text class="ink2" x="806" y="398" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">36.4%</text>
+<rect class="hl" x="26" y="407" width="790" height="27" rx="4" fill="#2a78d6" opacity=".07"/>
+<rect class="acc" x="26" y="411" width="3" height="19" rx="1.5" fill="#2a78d6"/>
+<text class="acc" x="35" y="425" fill="#2a78d6" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="8.5" font-weight="600" text-anchor="start">ATM</text>
+<text class="ink" x="124" y="425" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">64,000</text>
+<text class="ink2" x="178" y="425" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.530</text>
+<text class="ink2" x="232" y="425" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.540</text>
+<text class="ink2" x="286" y="425" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.550</text>
+<text class="ink2" x="344" y="425" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.460</text>
+<text class="ink2" x="412" y="425" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">225</text>
+<rect class="trk" x="422" y="418" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="418" width="95.9" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="425" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">889.73</text>
+<text class="ink2" x="666" y="425" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">307.23</text>
+<text class="ink" x="744" y="425" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">700.00</text>
+<text class="ink2" x="806" y="425" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">36.1%</text>
+<line class="rl" x1="52" y1="434" x2="816" y2="434" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="452" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">64,500</text>
+<text class="ink2" x="178" y="452" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.420</text>
+<text class="ink2" x="232" y="452" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.425</text>
+<text class="ink2" x="286" y="452" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.430</text>
+<text class="ink2" x="344" y="452" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.575</text>
+<text class="ink2" x="412" y="452" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">230</text>
+<rect class="trk" x="422" y="445" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="445" width="98.0" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="452" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">648.48</text>
+<text class="ink2" x="666" y="452" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">249.73</text>
+<text class="ink" x="744" y="452" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">958.75</text>
+<text class="ink2" x="806" y="452" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">36.1%</text>
+<line class="rl" x1="52" y1="461" x2="816" y2="461" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="479" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">65,000</text>
+<text class="ink2" x="178" y="479" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.300</text>
+<text class="ink2" x="232" y="479" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.310</text>
+<text class="ink2" x="286" y="479" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.320</text>
+<text class="ink2" x="344" y="479" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.690</text>
+<text class="ink2" x="412" y="479" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">205</text>
+<rect class="trk" x="422" y="472" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="472" width="87.3" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="479" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">464.73</text>
+<text class="ink2" x="666" y="479" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">192.23</text>
+<text class="ink" x="744" y="479" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">1,275.00</text>
+<text class="ink2" x="806" y="479" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">36.5%</text>
+<line class="rl" x1="52" y1="488" x2="816" y2="488" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="506" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">65,500</text>
+<text class="ink2" x="178" y="506" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.210</text>
+<text class="ink2" x="232" y="506" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.220</text>
+<text class="ink2" x="286" y="506" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.230</text>
+<text class="ink2" x="344" y="506" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.780</text>
+<text class="ink2" x="412" y="506" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">165</text>
+<rect class="trk" x="422" y="499" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="499" width="70.3" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="506" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">332.23</text>
+<text class="ink2" x="666" y="506" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">147.23</text>
+<text class="ink" x="744" y="506" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">1,642.50</text>
+<text class="ink2" x="806" y="506" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">37.3%</text>
+<line class="rl" x1="52" y1="515" x2="816" y2="515" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="533" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">66,000</text>
+<text class="ink2" x="178" y="533" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.130</text>
+<text class="ink2" x="232" y="533" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.145</text>
+<text class="ink2" x="286" y="533" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.160</text>
+<text class="ink2" x="344" y="533" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.855</text>
+<text class="ink2" x="412" y="533" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">130</text>
+<rect class="trk" x="422" y="526" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="526" width="55.4" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="533" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">240.98</text>
+<text class="ink2" x="666" y="533" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">109.73</text>
+<text class="ink" x="744" y="533" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">2,051.25</text>
+<text class="ink2" x="806" y="533" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">38.6%</text>
+<line class="rl" x1="52" y1="542" x2="816" y2="542" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="560" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">66,500</text>
+<text class="ink2" x="178" y="560" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.080</text>
+<text class="ink2" x="232" y="560" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.090</text>
+<text class="ink2" x="286" y="560" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.100</text>
+<text class="ink2" x="344" y="560" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.910</text>
+<text class="ink2" x="412" y="560" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">85</text>
+<rect class="trk" x="422" y="553" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="553" width="36.2" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="560" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">182.23</text>
+<text class="ink2" x="666" y="560" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">82.23</text>
+<text class="ink" x="744" y="560" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">2,492.50</text>
+<text class="ink2" x="806" y="560" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">40.5%</text>
+<line class="rl" x1="52" y1="569" x2="816" y2="569" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="587" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">67,000</text>
+<text class="ink2" x="178" y="587" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.050</text>
+<text class="ink2" x="232" y="587" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.060</text>
+<text class="ink2" x="286" y="587" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.070</text>
+<text class="ink2" x="344" y="587" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.940</text>
+<text class="ink2" x="412" y="587" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">50</text>
+<rect class="trk" x="422" y="580" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="580" width="21.3" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="587" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">144.73</text>
+<text class="ink2" x="666" y="587" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">67.23</text>
+<text class="ink" x="744" y="587" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">2,955.00</text>
+<text class="ink2" x="806" y="587" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">42.8%*</text>
+<line class="rl" x1="52" y1="596" x2="816" y2="596" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="614" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">67,500</text>
+<text class="ink2" x="178" y="614" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.030</text>
+<text class="ink2" x="232" y="614" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.040</text>
+<text class="ink2" x="286" y="614" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.050</text>
+<text class="ink2" x="344" y="614" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.960</text>
+<text class="ink2" x="412" y="614" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">30</text>
+<rect class="trk" x="422" y="607" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="607" width="12.8" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="614" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">119.73</text>
+<text class="ink2" x="666" y="614" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">57.23</text>
+<text class="ink" x="744" y="614" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">3,430.00</text>
+<text class="ink2" x="806" y="614" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">45.5%*</text>
+<line class="rl" x1="52" y1="623" x2="816" y2="623" stroke="#e1e0d9" stroke-width="1"/>
+<text class="ink" x="124" y="641" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="600" text-anchor="end">68,000</text>
+<text class="ink2" x="178" y="641" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.010</text>
+<text class="ink2" x="232" y="641" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.030</text>
+<text class="ink2" x="286" y="641" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.050</text>
+<text class="ink2" x="344" y="641" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">0.970</text>
+<text class="ink2" x="412" y="641" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">23</text>
+<rect class="trk" x="422" y="634" width="98" height="6" rx="3" fill="#e1e0d9" opacity=".55"/>
+<rect class="bar" x="422" y="634" width="9.6" height="6" rx="3" fill="#2a78d6"/>
+<text class="ink" x="602" y="641" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">102.23</text>
+<text class="ink2" x="666" y="641" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">52.23</text>
+<text class="ink" x="744" y="641" fill="#0b0b0b" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">3,912.50</text>
+<text class="ink2" x="806" y="641" fill="#52514e" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="12.5" font-weight="400" text-anchor="end">48.3%*</text>
+<text class="mut" x="26" y="676" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">* value driven by the extrapolated tail, not by quoted strikes</text>
+<text class="mut" x="26" y="693" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">band = call_hi - call_lo, the cost of the strike grid plus the tail</text>
+<text class="mut" x="26" y="710" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">warning: dropped 19 of 50 threshold strikes pinned at the extreme tick; integrating their midpoints</text>
+<text class="mut" x="26" y="727" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">would have added ~$40 to every call. The region beyond the live quotes is the tail model's job now</text>
+<text class="mut" x="26" y="744" fill="#898781" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,sans-serif" font-size="10.5" font-weight="400" text-anchor="start">warning: digital curve was not monotone; PAVA-repaired before integrating</text>
+</svg>
