@@ -18,3 +18,11 @@ venv/
 # chain.svg
 # call.svg
 # put.svg
+
+# figures/ holds the snapshots the README displays. Ignored as a directory so a
+# stray re-run dropped in here never lands in a commit by accident -- the three
+# the README points at were added with `git add -f` and stay tracked, since an
+# image GitHub cannot fetch renders as a broken icon. Note that the rule does
+# not gate those three any more: git ignores only untracked files, so edits to
+# them still show up in `git status` and must be committed deliberately.
+figures/

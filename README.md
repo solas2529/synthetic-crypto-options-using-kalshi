@@ -184,6 +184,8 @@ footer. It is dependency-free and self-contained — light and dark palettes, wi
 the light values also written as presentation attributes so a rasteriser that
 ignores `<style>` still gets a correct render rather than black-on-black.
 
+![The reconstructed chain table: 18 strikes of the BTC ladder expiring Fri 07 Aug, with quotes, implied CDF and density, synthetic call and put values, the lo/hi band and implied vols.](figures/chain.svg)
+
 **`call.svg`** is `OptionChain.format_payoff_svg()` — the same reconstruction
 drawn twice, once in price space and once in payoff space:
 
@@ -206,6 +208,8 @@ drawn twice, once in price space and once in payoff space:
 It takes the *full* chain, not the CDF-banded view the table prints, so the
 "ladder ends here" line sits where the quotes actually stop.
 
+![The ATM call drawn twice: left, the survival curve with the area right of the strike shaded and ruled into its dK columns; right, the same sum at expiry as stacked digital slabs bracketing the hockey stick. Below, every banded strike with its greeks.](figures/call.svg)
+
 **`put.svg`** is the mirror image, `OptionChain.format_put_payoff_svg()`.
 A put is the same sum walked in from the other end of the ladder — `P(K) = ∫₀ᴷ
 Q(S_T ≤ u) du` — so the left panel plots the CDF and shades the area *left* of the
@@ -217,6 +221,15 @@ high, running left from `K_m`. Below the bottom quoted strike both stacks flatte
 `K_atm − K_0` while the payoff keeps climbing toward `K_atm`; that wedge is the
 lower tail, and it is worth exactly the chain's put at the bottom strike, since
 `P(K_0)` *is* the whole area below the ladder.
+
+![The ATM put, mirrored: left, the CDF with the area left of the strike shaded; right, the digital-put slabs stacked leftward, bracketing the put's payoff. The same per-strike block underneath, with dP/dK in place of dC/dK.](figures/put.svg)
+
+All three are the run committed here — `KXBTCD-26AUG0717`, the BTC ladder
+expiring Fri 07 Aug, 64h out, forward 64,189.72 and ATM IV 36.1% at K=64,000.
+They live in `figures/`, which is gitignored as a directory so a stray re-run
+cannot land in a commit; these three were added deliberately with `git add -f`,
+since an image GitHub cannot fetch is a broken icon. Re-running the tool
+overwrites the copies at the repo root, not these.
 
 Both payoff figures carry a **greeks strip** under the price row, and it is split
 on purpose. Differentiating
