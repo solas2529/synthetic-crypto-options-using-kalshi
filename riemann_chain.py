@@ -1702,8 +1702,9 @@ def build_chain(
         min_strikes: below this many usable strikes, return an empty chain
                  rather than a fake one.
 
-    The tail is always fitted (exponential decay off the last two points) and
-    D(K) is always PAVA-repaired before integrating.  Both used to be switchable
+    The tail is always fitted (exponential decay, its rate from a log-linear fit
+    over a window `_upper_tail` widens until the curve has halved) and D(K) is
+    always PAVA-repaired before integrating.  Both used to be switchable
     and neither switch was ever worth throwing: truncating the tail biases the
     forward and every call low, and integrating a non-monotone D(K) produces
     negative densities downstream.
