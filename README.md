@@ -6,38 +6,40 @@ prediction markets — no options exchange involved.*
 Kalshi's crypto markets are cash-or-nothing **digital options**. A market paying
 \$1 if BTC settles above K prices the risk-neutral survival probability
 
-$$D(K) \;=\; \mathbb{Q}(S_T > K)$$
+```math
+D(K) \;=\; \mathbb{Q}(S_T > K)
+```
 
 and vanilla options are the integral of that curve:
 
-$$
+```math
 \begin{aligned}
 C(K) &= \mathbb{E}\big[(S_T-K)^+\big] &&= \int_K^{\infty} \mathbb{Q}(S_T > u)\,du \\[2pt]
 P(K) &= \mathbb{E}\big[(K-S_T)^+\big] &&= \int_0^{K} \mathbb{Q}(S_T \le u)\,du \\[2pt]
 F    &= \mathbb{E}[S_T]               &&= \int_0^{\infty} \mathbb{Q}(S_T > u)\,du
 \end{aligned}
-$$
+```
 
 That first line is the only step doing real work, and it is just the tail formula
-$\mathbb{E}[X]=\int_0^{\infty}\mathbb{Q}(X>y)\,dy$ applied to the payoff itself:
+$\mathbb{E}[X]=\int_0^{\infty}\mathbb{Q}(X \gt y)\ dy$ applied to the payoff itself:
 
-$$
+```math
 \mathbb{E}\big[(S_T-K)^+\big]
 \;=\; \int_0^{\infty} \mathbb{Q}\big((S_T-K)^+ > y\big)\,dy
 \;=\; \int_0^{\infty} \mathbb{Q}(S_T > K+y)\,dy
 \;=\; \int_K^{\infty} \mathbb{Q}(S_T > u)\,du
-$$
+```
 
 A vanilla *is* a stack of digitals, and the ladder quotes the integrand.
 
 ## The sum
 
 So a Kalshi strike ladder already is a discretised call chain — all that is left
-is to sum it. Write the quoted strikes $K_0 < \dots < K_{n-1}$, the digital levels
+is to sum it. Write the quoted strikes $K_0 \lt \dots \lt K_{n-1}$, the digital levels
 $D_i = D(K_i)$, the gaps $\Delta K_i = K_{i+1}-K_i$, and let $T$ be the modelled
 mass above the top strike:
 
-$$
+```math
 \begin{aligned}
 C_{\text{hi}}(K_j) &= \sum_{i=j}^{n-2} D_i\,\Delta K_i \;+\; T
   &&\text{left rule, plus the tail} \\[4pt]
@@ -48,7 +50,7 @@ C^{\ast}(K_j)      &= \sum_{i=j}^{n-2} \tfrac{1}{2}\big(D_i + D_{i+1}\big)\Delta
 \text{band}        &= C_{\text{hi}} - C_{\text{lo}}
                     = \sum_{i=j}^{n-2} \big(D_i - D_{i+1}\big)\Delta K_i \;+\; T
 \end{aligned}
-$$
+```
 
 These are `call_hi`, `call_lo`, `call` and `band` in the output. $D$ is
 non-increasing, so the left rule over-counts and the right rule under-counts and
@@ -59,7 +61,7 @@ bound, since unquoted mass can sit arbitrarily far out — so $C_{\text{hi}}$
 carries the modelled tail and is an estimate. Everything else falls out of the
 same curve:
 
-$$
+```math
 \begin{aligned}
 F &= C^{\ast}(K_0) + L, \qquad L = \int_0^{K_0} D(u)\,du
   &&\text{the mass below the ladder} \\[4pt]
@@ -70,7 +72,7 @@ P(K_j) &= C(K_j) - \mathrm{DF}\cdot\big(F - K_j\big)
 f(K_i) &= \frac{D_{i-1} - D_{i+1}}{K_{i+1} - K_{i-1}}
   &&\text{one-sided at the ends}
 \end{aligned}
-$$
+```
 
 `build_chain` computes exactly these, cumulating downward from the top strike so
 each `C(K_j)` reuses the sum above it, and hands back strikes, the implied CDF
@@ -218,14 +220,14 @@ lower tail, and it is worth exactly the chain's put at the bottom strike, since
 
 Both payoff figures carry a **greeks strip** under the price row, and it is split
 on purpose. Differentiating
-$C(K)=\mathrm{DF}\int_K^{\infty}\mathbb{Q}(S_T>u)\,du$ *in the strike* hands
+$C(K)=\mathrm{DF}\int_K^{\infty}\mathbb{Q}(S_T \gt u)\ du$ *in the strike* hands
 back the integrand:
 
-$$
+```math
 \frac{\partial C}{\partial K} = -\,\mathrm{DF}\cdot\mathbb{Q}(S_T > K)
 \qquad\qquad
 \frac{\partial^2 C}{\partial K^2} = \mathrm{DF}\cdot f(K)
-$$
+```
 
 which is Breeden–Litzenberger read backwards. Both sides of that are already on
 the ladder — they are the `digital_mid` and `pdf` columns in different units — so
@@ -235,7 +237,9 @@ very curve the left panel plots. The put's mirror is
 $\partial P/\partial K = +\mathrm{DF}\cdot\mathbb{Q}(S_T \le K)$, its own left
 panel, and parity pins them:
 
-$$\frac{\partial C}{\partial K} - \frac{\partial P}{\partial K} = -\,\mathrm{DF}$$
+```math
+\frac{\partial C}{\partial K} - \frac{\partial P}{\partial K} = -\,\mathrm{DF}
+```
 
 Delta, gamma, vega and theta differentiate in `F`, `σ` and `t` instead — none of
 which one expiry's strike ladder pins down, since the quotes fix the
