@@ -75,7 +75,11 @@ $$
 `build_chain` computes exactly these, cumulating downward from the top strike so
 each `C(K_j)` reuses the sum above it, and hands back strikes, the implied CDF
 and density, synthetic call/put values, the implied forward, Black-76 implied
-vols and the greeks.
+vols and the greeks. Both $f$ and $P$ are floored at zero on the way out, which
+is belt-and-braces rather than arithmetic: a PAVA-repaired $D$ is non-increasing,
+so $f \ge 0$ already, and $P(K_0) = K_0 - L \ge 0$ because $L$ is an integral of
+$D \le 1$ over $[0, K_0]$. If either floor ever binds, the curve reached the sum
+in a state the repair was supposed to rule out.
 
 ## Setup
 
@@ -164,10 +168,13 @@ The knobs the old flags exposed are gone rather than defaulted. Tail fitting and
 PAVA repair are now unconditional — truncating the tail biases the forward and
 every call low, and integrating a non-monotone `D(K)` produces negative
 densities, so neither switch was ever worth throwing. The widest-usable-spread
-cutoff is a module constant. What survives as keyword arguments is what gets
-used: `side=` (the `bid`/`ask` chains that give the executable band), `rate=`
-(zero carry is right for these expiries, not for every expiry), `min_strikes=`,
-and `drop_pinned=`.
+cutoff is a module constant. What survives on `build_chain` is what gets used:
+`side=` (the `bid`/`ask` chains that give the executable band), `rate=` (zero
+carry is right for these expiries, not for every expiry), `min_strikes=`, and
+`expiry=` / `now=` for pricing a ladder as of some moment other than now. The
+extreme-tick filter is one level down, on `digitals_from_markets(...,
+drop_pinned=False)`, since seeing what it drops means looking at the digitals
+rather than the chain.
 
 **`chain.svg`** is the table `OptionChain.format_svg()` renders: the same columns
 plus an inline density bar, the ATM row marked, and the warnings carried into the
@@ -357,10 +364,11 @@ The last entry on the coin menu (or `riemann_chain.selftest()`, whose number
 depends on how many coins `/series` returned) prices binaries off a known
 lognormal and
 checks the reconstruction
-inverts it: the forward returns to 2e-3, calls to 1e-4 of notional, and implied
-vol to 4e-4 of the 60% input across the 2–98% CDF band. It also checks parity,
-the density integral, the lower bound, and the degenerate cases. It runs offline —
-no API key, no network.
+inverts it, to 2e-3 on the forward, 1e-4 of notional on the calls, and 5e-3 on
+implied vol across the 2–98% CDF band — the vol actually comes back to 4e-4 of
+the 60% input, and the looser bound is there so tick-scale noise cannot fail the
+suite. It also checks parity, the density integral, the lower bound, and the
+degenerate cases. It runs offline — no API key, no network.
 
 All three SVGs are checked too: well-formed XML, every strike present, a fallback
 fill on every text node, dark mode declared, and nothing plotted outside the canvas.
