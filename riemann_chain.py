@@ -1,15 +1,17 @@
 """Build a vanilla options chain out of Kalshi binary (digital) markets.
 
 A Kalshi market that pays $1 if BTC settles above K is a cash-or-nothing digital
-call.  Under the settlement measure its price *is* the survival probability
+call.  With zero carry its price *is* the risk-neutral survival probability
 
     D(K) = Q(S_T > K)
 
-and vanilla options are the Riemann integral of that curve:
+and vanilla options are the Riemann integral of that curve.  These are values
+at expiry (undiscounted); the chain multiplies them by DF = exp(-r tau), which
+is 1 at the default r = 0:
 
-    C(K) = E[(S_T - K)+] = int_K^inf  Q(S_T > u) du
-    P(K) = E[(K - S_T)+] = int_0^K    Q(S_T <= u) du
-    F    = E[S_T]        = int_0^inf  Q(S_T > u) du
+    E[(S_T - K)+] = int_K^inf  Q(S_T > u) du      (call)
+    E[(K - S_T)+] = int_0^K    Q(S_T <= u) du     (put)
+    F = E[S_T]    = int_0^inf  Q(S_T > u) du      (forward)
 
 So a ladder of Kalshi strikes already *is* a discretised call chain -- you only
 have to sum it.  This module does that sum, plus the plumbing you need for the
@@ -304,7 +306,11 @@ class ChainRow:
 
     @property
     def call_spread_width(self) -> float:
-        """Width of the [lo, hi] band -- what the strike grid plus the tail cost you."""
+        """Width of the [lo, hi] band -- what the strike grid plus the tail cost you.
+
+        A full width, not a +/- half-width: `call` is not centred in the band,
+        it sits half the modelled tail above the band's midpoint.
+        """
         return self.call_hi - self.call_lo
 
     @property
@@ -323,10 +329,11 @@ class Greeks:
         dC/dK   = -DF Q(S_T > K)      d2C/dK2 = DF f(K)
 
     which is Breeden-Litzenberger read backwards: the two strike derivatives are
-    the digital quote and the density, both of which the ladder already carries.
-    No model, no vol, nothing fitted -- they are the `digital_mid` and `pdf`
-    columns wearing different units, and they stay right even where the smile
-    does not.
+    the digital level and the density, both of which the ladder already carries.
+    No model, no vol, nothing fitted -- they are the `cdf` and `pdf` columns
+    wearing different units (dC/dK = -DF (1 - cdf), the PAVA-repaired quote, so
+    it equals -DF x `digital_mid` unless the repair had to move that strike),
+    and they stay right even where the smile does not.
 
     `delta`, `gamma`, `vega` and `theta` differentiate in the forward, the vol
     and the clock, none of which a single expiry's strike ladder pins down: the
@@ -342,8 +349,8 @@ class Greeks:
     delta: float | None       # dC/dF, per $1 of forward
     gamma: float | None       # d2C/dF2, per $1^2 -- displayed x 1e6
     vega: float | None        # dC/dsigma, per *vol point* (partial / 100)
-    theta: float | None       # -dC/dt, per *day* (partial / 365)
-    dual_delta: float         # dC/dK, exact: -DF x the digital quote
+    theta: float | None       # -dC/dtau (tau = time to expiry), per *day* (partial / 365)
+    dual_delta: float         # dV/dK, exact: -DF x D(K) for a call, +DF x Q(S <= K) for a put
     dual_gamma: float         # d2C/dK2, exact: DF x the density
     kind: Literal["call", "put"] = "call"
 
@@ -442,7 +449,7 @@ class OptionChain:
     def format_table(self) -> str:
         head = (
             f"{'strike':>12} {'bid':>6} {'mid':>6} {'ask':>6} "
-            f"{'cdf':>6} {'pdf x1e6':>9} {'call':>10} {'+/-':>8} {'put':>10} {'iv':>7}"
+            f"{'cdf':>6} {'pdf x1e6':>9} {'call':>10} {'band':>8} {'put':>10} {'iv':>7}"
         )
         lines = [head, "-" * len(head)]
         for r in self.rows:
@@ -455,6 +462,7 @@ class OptionChain:
             )
         if any(r.model_dependent for r in self.rows):
             lines.append("  * value driven by the extrapolated tail, not by quoted strikes")
+        lines.append("  band = call_hi - call_lo, a full width -- call is not centred in it")
         return "\n".join(lines)
 
     def format_svg(self, event: str = "") -> str:
@@ -602,9 +610,11 @@ class OptionChain:
         Right panel is those same two sums read at expiry instead of at the
         integral.  Holding dK_i digitals struck at K_i, for every K_i at or above
         the strike, super-replicates (S_T - K)+; holding the same widths one
-        strike up sub-replicates it.  The true hockey stick is trapped between,
-        so the vertical gap here and the chain's `band` column are the same
-        quantity seen from two directions -- and both close as dK -> 0.
+        strike up sub-replicates it.  The true hockey stick is trapped between.
+        The vertical gap is a payoff: it pays dK_m if S_T lands in (K_m, K_m+1],
+        which is a bin the ladder prices at dK_m (D_m - D_m+1).  Summed over the
+        strikes that is the chain's `band` column less the tail, so the band is
+        what the gap *costs* -- and both close as dK -> 0.
 
         Past the top quoted strike the stacks go flat while the payoff keeps
         climbing.  That wedge is what the tail model is guessing at, and it is
@@ -665,8 +675,9 @@ class OptionChain:
             "the dK columns it is summed from. The staircase above the curve is the left-hand "
             "sum (call_hi), the one below it the right-hand sum (call_lo)",
             "right: dK digitals struck at each K_i super-replicate the call; the same widths "
-            "struck one strike up sub-replicate it. The gap between them is the strike grid. "
-            "Each slab is one digital's dK, and they stack into the staircase you collect",
+            "struck one strike up sub-replicate it. The gap between them pays dK wherever S_T "
+            "lands, and what that costs is the band. Each slab is one digital's dK, and they "
+            "stack into the staircase you collect",
         ]
         if tail_ext > 0:
             foot.append(
@@ -677,7 +688,7 @@ class OptionChain:
             foot.append(f"areas are undiscounted; the quoted call carries the "
                         f"{self.discount:.4f} discount factor")
         foot.append(
-            "greeks: dC/dK is exact -- it is minus the digital quote at K, which this "
+            "greeks: dC/dK is exact -- it is -DF x D(K), the digital at K that this "
             "ladder prices directly, and its slope-of-the-curve reading is the left panel. "
             "delta, gamma, vega and theta differentiate in F, sigma and t, which one expiry "
             "cannot pin down, so they are Black-76 at this strike's own IV"
@@ -725,7 +736,8 @@ class OptionChain:
 
         stats = [("forward", f"{self.forward:,.2f}"), ("ATM strike", f"{katm:,.0f}"),
                  ("call", f"{atm.call:,.2f}"),
-                 ("band", f"±{atm.call_spread_width / 2:,.2f}")]
+                 # a range, not +/-: the trapezoid sits half a tail above its middle
+                 ("call_lo – call_hi", f"{atm.call_lo:,.2f} – {atm.call_hi:,.2f}")]
         if atm.iv:
             stats.append(("ATM IV", f"{atm.iv * 100:.1f}%"))
         sx = pad
@@ -922,9 +934,9 @@ class OptionChain:
         the same widths struck one strike down sub-replicate it.
 
         Below the bottom quoted strike both stacks go flat at K_atm - K_0 while
-        the payoff keeps climbing toward K_atm.  That wedge is the lower tail --
-        and it is worth exactly the chain's put at the bottom strike, since
-        P(K_0) is by definition the whole area below the ladder.
+        the payoff keeps climbing toward K_atm.  That wedge is a put struck at
+        K_0, i.e. the lower tail -- and the chain's put at the bottom strike is
+        exactly that, DF x the whole (modelled) area below the ladder.
         """
         e = _xml_escape
         pad, gap = 26, 34
@@ -987,8 +999,9 @@ class OptionChain:
             "the dK columns it is summed from. The staircase above the curve is the right-hand "
             "sum (put_hi), the one below it the left-hand sum (put_lo)",
             "right: dK digital puts struck at each K_i+1 super-replicate the put; the same "
-            "widths struck one strike down sub-replicate it. The gap between them is the grid. "
-            "Each slab is one digital's dK, and they stack into the staircase you collect",
+            "widths struck one strike down sub-replicate it. The gap between them pays dK "
+            "wherever S_T lands, and what that costs is the band. Each slab is one digital's "
+            "dK, and they stack into the staircase you collect",
         ]
         if ext > 0:
             foot.append(
@@ -997,8 +1010,8 @@ class OptionChain:
                 f"{tail_w:.1%} of this put's value"
             )
         foot.append(
-            "greeks: dP/dK is exact -- it is the complementary digital Q(S <= K) at K, the "
-            "left panel's own curve, priced by this ladder. delta, gamma, vega and theta "
+            "greeks: dP/dK is exact -- it is DF x Q(S <= K), the complementary digital at K "
+            "and the left panel's own curve, priced by this ladder. delta, gamma, vega and theta "
             "differentiate in F, sigma and t, which one expiry cannot pin down, so they are "
             "Black-76 at this strike's own IV"
         )
@@ -1048,7 +1061,8 @@ class OptionChain:
 
         stats = [("forward", f"{self.forward:,.2f}"), ("ATM strike", f"{katm:,.0f}"),
                  ("put", f"{atm.put:,.2f}"),
-                 ("band", f"±{self.discount * (put_hi - put_lo) / 2:,.2f}")]
+                 ("put_lo – put_hi", f"{self.discount * put_lo:,.2f} – "
+                                     f"{self.discount * put_hi:,.2f}")]
         if atm.iv:
             stats.append(("ATM IV", f"{atm.iv * 100:.1f}%"))
         sx = pad
@@ -1374,18 +1388,23 @@ def digitals_from_markets(
         live = [d for d in thresholds if not _pinned(d)]
         dropped = len(thresholds) - len(live)
         if dropped and warnings is not None:
-            # How much strike space the dead wings spanned: that times the half-tick
-            # midpoint is the constant this would have added to every call.
-            wing = 0.0
+            # How much strike space each dead wing spanned. A pinned midpoint is off
+            # by up to half a tick, so a wing adds about that much per $1 of strike
+            # it covers -- but to different columns. The upper wing's 0.005s sit
+            # above every live strike and land in every call; the lower wing's
+            # 0.995s sit below them, never enter a call, and land in every put
+            # instead (through the forward, via parity).
+            wing_hi = wing_lo = 0.0
             if live:
                 lo, hi = min(d.strike for d in live), max(d.strike for d in live)
                 ks = [d.strike for d in thresholds]
-                wing = max(max(ks) - hi, 0.0) + max(lo - min(ks), 0.0)
+                wing_hi, wing_lo = max(max(ks) - hi, 0.0), max(lo - min(ks), 0.0)
             warnings.append(
                 f"dropped {dropped} of {len(thresholds)} threshold strikes pinned at the "
                 f"extreme tick; integrating their midpoints would have added ~"
-                f"${0.5 * _TICK * wing:,.0f} to every call. The region beyond the live "
-                f"quotes is the tail model's job now"
+                f"${0.5 * _TICK * wing_hi:,.0f} to every call and ~"
+                f"${0.5 * _TICK * wing_lo:,.0f} to every put. The region beyond the "
+                f"live quotes is the tail model's job now"
             )
         thresholds = live
 
@@ -1591,27 +1610,52 @@ def _black76_greeks(f: float, k: float, tau: float, sigma: float, df: float,
     return delta, gamma, vega / 100.0, theta / 365.0
 
 
-def _density_vol(rows: Sequence[ChainRow], forward: float, tau: float) -> float | None:
-    """Vol read off the *peak* of the reconstructed density.
+# z at the upper quartile of a standard normal: N(0.6745) = 0.75.
+_Z75 = 0.6744897501960817
 
-    A lognormal density peaks at 0.3989 / (F sigma sqrt(tau)), so inverting the
-    tallest pdf gives a vol that depends only on the strikes around the money.
-    That is the point: it is a purely *local* measurement, where the `call`
-    column is an integral across the entire ladder.  The two must agree, and
-    when they do not it is the wings, not the shape, that are wrong -- see
-    `_vol_consistency`.
+
+def _density_vol(rows: Sequence[ChainRow], forward: float, tau: float) -> float | None:
+    """Vol read off the interquartile range of the implied distribution.
+
+    For a lognormal with total vol v = sigma sqrt(tau), the quantile at level q
+    is F exp(-v^2/2 + v z_q), so the drift cancels in the ratio of the upper and
+    lower quartiles:
+
+        ln(K_75 / K_25) = 2 z_75 v,     K_q defined by  Q(S_T <= K_q) = q
+
+    which inverts for sigma exactly.  The quartiles are read off the repaired
+    D(K) by linear interpolation between strikes, so the estimate depends only on
+    the central half of the mass.  That is the point: it is a *local*
+    measurement, where the `call` column is an integral across the entire
+    ladder.  The two must agree, and when they do not it is the wings, not the
+    shape, that are wrong -- see `_vol_consistency`.
+
+    Reading the vol off the density's *peak* instead (a lognormal peaks near
+    1 / (sqrt(2 pi) F v)) is the obvious alternative and a worse one: the peak is
+    the maximum of a central difference of 1c-quantised quotes, so it picks up
+    the noise and reads the vol ~10% low on a tick-rounded lognormal, and on a
+    coarse grid the difference smooths the peak down and reads it high.
     """
-    if tau <= 0 or forward <= 0 or not rows:
+    if tau <= 0 or forward <= 0 or len(rows) < 2:
         return None
-    peak = max(r.pdf for r in rows)
-    if peak <= 0:
+
+    def strike_at(level: float) -> float | None:
+        # first crossing of D(K) = level, interpolating between strikes
+        for a, b in zip(rows, rows[1:]):
+            da, db = 1.0 - a.cdf, 1.0 - b.cdf
+            if da >= level >= db and da > db:
+                return a.strike + (da - level) / (da - db) * (b.strike - a.strike)
         return None
-    return 0.3989 / (peak * forward * math.sqrt(tau))
+
+    k75, k25 = strike_at(0.25), strike_at(0.75)   # D = 0.25 is the 75th percentile
+    if k75 is None or k25 is None or k25 <= 0 or k75 <= k25:
+        return None
+    return math.log(k75 / k25) / (2.0 * _Z75 * math.sqrt(tau))
 
 
 # How far the call column may sit above the density before it is worth saying so.
-# Real skew moves these apart a little -- the threshold ladders run ~1.1 -- while
-# a dead wing being integrated runs 1.7 and up.
+# Fat tails alone move these apart a little -- a Student-t with 4 degrees of
+# freedom reads 1.14 -- while a dead wing being integrated runs 1.7 and up.
 _VOL_GAP = 1.25
 
 
@@ -1628,14 +1672,15 @@ def _vol_consistency(rows: Sequence[ChainRow], forward: float, tau: float) -> st
     What it catches: a ladder whose whole call column is scaled up, which is the
     bin-ladder failure -- ~190 bins, the projection leaves slivers on the dead
     ones, and integrating those slivers across a ladder running +/-15% lifts the
-    ATM call to ~1.8x the density's.  Sensitivity floor is around 8-10% of mass
-    smeared; below that the ratio sits inside the range real skew produces.
+    ATM call to ~1.8x the density's.  Sensitivity floor is around 9-10% of mass
+    smeared; below that the ratio sits inside the range fat tails produce.
 
     What it does NOT catch: tick-pinned quotes adding a *constant* to every call.
-    A constant is small next to a fat ATM call (1.17x on the synthetic in
-    `selftest` step 11) and enormous next to a wing call (1.95x at 5% OTM), so
-    it barely moves this ratio.  `_pinned` drops those quotes on the way in and
-    `tail_weight` flags what is left; do not read silence here as covering them.
+    A constant is small next to a fat ATM call and enormous next to a wing call
+    -- on the synthetic in `selftest` step 11 it lifts the ATM call 6% and the
+    5%-OTM call 95% -- so it barely moves this ratio (1.07x there).  `_pinned`
+    drops those quotes on the way in and `tail_weight` flags what is left; do not
+    read silence here as covering them.
     """
     dens = _density_vol(rows, forward, tau)
     if dens is None or dens <= 0:
@@ -1696,11 +1741,23 @@ def build_chain(
         now:     valuation time; defaults to UTC now.
         rate:    continuously-compounded discount rate.  0 is the right default
                  for the hourly/daily crypto series -- carry over a few hours is
-                 far inside the tick.
-        side:    which digital quote drives the integral.  'bid' and 'ask' give
-                 you an executable band around the 'mid' chain.
+                 far inside the tick.  See the convention note below.
+        side:    which digital quote drives the integral.  Note what that means
+                 for puts: a put integrates the *complementary* digital 1 - D,
+                 whose bid is 1 - D_ask, so the 'bid' chain carries call bids
+                 and put *asks* (and 'ask' the reverse).  The executable band on
+                 a call is call_lo off the 'bid' chain to call_hi off the 'ask'
+                 chain; the trapezoid `call` is a blend of both stacks and is not
+                 itself something you can trade at.
         min_strikes: below this many usable strikes, return an empty chain
                  rather than a fake one.
+
+    Convention: each quote is read directly as D(K) = Q(S_T > K), an undiscounted
+    probability, and `rate` only discounts the finished vanilla (call = DF x the
+    integral, DF = exp(-rate tau)).  That is exact at rate = 0.  At a non-zero
+    rate it treats the quotes as forward-settled; if you would rather read a
+    price as DF x Q, pass `Digital`s with the quotes already divided by DF, and
+    `call` then comes back as exactly what the replicating digitals cost.
 
     The tail is always fitted (exponential decay, its rate from a log-linear fit
     over a window `_upper_tail` widens until the curve has halved) and D(K) is
@@ -1777,9 +1834,15 @@ def build_chain(
     # the left rule over-counts and the right rule under-counts: free bounds.
     # `call_lo` deliberately omits the tail: E[(S-K)+] can only shrink when you
     # discard mass above the top strike, so right-Riemann-without-tail is a real
-    # bound that assumes nothing. There is no matching rigorous upper bound --
-    # unquoted mass can sit arbitrarily far out -- so `call_hi` carries the
-    # modelled tail and is an estimate. `tail_weight` says where that matters.
+    # bound on the integral of *this* curve that assumes nothing about the wing.
+    # There is no matching rigorous upper bound -- unquoted mass can sit
+    # arbitrarily far out -- so `call_hi` carries the modelled tail and is an
+    # estimate. `tail_weight` says where that matters.
+    #
+    # The trapezoid is the average of the two rules plus the tail, so
+    # call = (call_lo + call_hi)/2 + tail/2: the point estimate sits half a tail
+    # above the middle of [call_lo, call_hi], not in it.  Read the band as a
+    # range, never as +/- around `call`.
     call_mid = [0.0] * n
     call_lo = [0.0] * n
     call_hi = [0.0] * n
@@ -2001,9 +2064,10 @@ def selftest() -> int:
     ok &= _check("implied forward", chain.forward, _F0, 2e-3)
 
     # Two different questions, two different metrics.  Relative error on a
-    # sub-dollar wing call is dust-division -- the trapezoid rule carries a small
-    # positive bias (it over-counts a convex decreasing integrand) whose ABSOLUTE
-    # size shrinks into the wing while its ratio to a vanishing call blows up.
+    # sub-dollar wing call is dust-division -- above the mode D(K) is convex, the
+    # trapezoid rule over-counts a convex integrand, and that small positive bias
+    # shrinks in ABSOLUTE size into the wing while its ratio to a vanishing call
+    # blows up.
     # So: bound the absolute error against notional everywhere, and the relative
     # error only where the option is worth something.
     worst_iv = worst_abs = worst_rel = 0.0
@@ -2206,6 +2270,22 @@ def selftest() -> int:
     ok &= bites
     print(f"  [{'PASS' if warns11 else 'FAIL'}] drop was surfaced: {warns11}")
     ok &= bool(warns11)
+
+    # The warning prices the two wings separately because they land in different
+    # columns: the upper wing's 0.005s sit above every live strike and lift every
+    # call, the lower wing's 0.995s sit below them and lift every put.  Its
+    # half-tick figures must be the right size for what including them does --
+    # lumping both wings into "every call" overstated the call bump ~3x here.
+    import re
+    said = re.search(r"~\$([\d,]+) to every call and ~\$([\d,]+) to every put",
+                     " ".join(warns11))
+    at = good.atm().strike
+    br = next(r for r in bad.rows if r.strike == at)
+    ok &= bool(said)
+    if said:
+        claim_c, claim_p = (float(x.replace(",", "")) for x in said.groups())
+        ok &= _check("stated call bump vs measured", claim_c, br.call - good.atm().call, 0.4)
+        ok &= _check("stated put bump vs measured", claim_p, br.put - good.atm().put, 0.4)
 
     # Bins are a partition and must survive untouched: dropping members would
     # break contiguity and send `_from_bins` down its raw-midpoint fallback.
