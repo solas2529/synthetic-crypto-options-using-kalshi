@@ -1,142 +1,342 @@
 # Synthetic Crypto Options Using Kalshi
 
-*Vanilla calls, puts, implied vols and greeks, reconstructed from binary
-prediction markets — no options exchange involved.*
+*Vanilla calls, puts, implied vols and greeks, built only from Kalshi's
+"will BTC be above \$K?" contracts. No options exchange involved.*
 
-Kalshi's crypto markets are cash-or-nothing **digital options**. With zero carry,
-a market paying \$1 if BTC settles above K is priced at the risk-neutral survival
-probability
+Kalshi lists a ladder of \$1 contracts, one per strike $K$, that pay if the coin
+settles above $K$. Call the price of each one $D(K)$. Then:
 
 ```math
-D(K) \;=\; \mathbb{Q}(S_T > K)
+\boxed{\;C(K) \;=\; \int_K^{\infty} D(u)\,du\;}
 ```
 
-and vanilla options are the integral of that curve. The expectations here are
-what each option pays *on average at expiry* — undiscounted; see
-[Conventions](#conventions) for where the discount factor comes in:
+A call is the area under the ladder to the right of its strike. Everything below
+is the proof of that line and what it takes to make it hold on real quotes.
+
+![The reconstructed chain for the BTC ladder expiring Fri 07 Aug: quotes, implied CDF and density, synthetic calls and puts, the lo/hi band and implied vols.](figures/chain.svg)
+
+**Contents:**
+[Notation](#1-notation) ·
+[D(K) from quotes](#2-building-dk-from-kalshi-quotes) ·
+[C, P, F from D](#3-calls-puts-and-the-forward-from-dk) ·
+[Riemann sum](#4-the-ladder-is-a-riemann-sum) ·
+[Tails](#5-tails) ·
+[Puts](#6-puts) ·
+[Vols and greeks](#7-density-implied-vol-greeks) ·
+[Bid/ask](#8-what-you-can-actually-trade) ·
+[Setup](#setup) ·
+[Use](#use) ·
+[Pitfalls](#pitfalls-on-real-kalshi-data) ·
+[Validation](#validation)
+
+---
+
+## 1. Notation
+
+| symbol | meaning |
+|---|---|
+| $S_T$ | the contract's settlement value at expiry (a reference index fixing, per the series rules) |
+| $\mathbb{Q}$ | the probabilities the market prices at (risk-neutral) |
+| $D(K)$ | $\mathbb{Q}(S_T \gt K)$, the price of the "above $K$" contract |
+| $f(K)$ | the density of $S_T$, so $f = -D'$ |
+| $K_0 \lt K_1 \lt \dots \lt K_{n-1}$ | the quoted strikes, with $D_i = D(K_i)$ and $\Delta K_i = K_{i+1} - K_i$ |
+| $C(K)$, $P(K)$, $F$ | call, put and forward: $\mathbb{E}[(S_T-K)^+]$, $\mathbb{E}[(K-S_T)^+]$, $\mathbb{E}[S_T]$ |
+| $\tau$, $\mathrm{DF}$ | years to expiry, and the discount factor $e^{-r\tau}$ (default $r = 0$, so $\mathrm{DF} = 1$) |
+
+## 2. Building D(K) from Kalshi quotes
+
+**Why a price is a probability.** A contract paying $\mathbf{1}$ when $S_T \gt K$ costs
+
+```math
+\mathrm{DF}\cdot\mathbb{E}^{\mathbb{Q}}\big[\mathbf{1}\{S_T > K\}\big] \;=\; \mathrm{DF}\cdot\mathbb{Q}(S_T > K) \;\approx\; D(K)
+```
+
+because $\tau$ is hours to days and $1 - \mathrm{DF}$ is far inside the 1¢ tick. The
+code reads each quote as $D(K)$ and discounts only the finished option (§6).
+
+Each strike goes through five steps, in order.
+
+**Step 1: merge the YES and NO books.** A NO ask at $x$ is a YES bid at $1 - x$:
+
+```math
+b = \max\big(b^{\text{yes}},\; 1 - a^{\text{no}}\big) \qquad a = \min\big(a^{\text{yes}},\; 1 - b^{\text{no}}\big)
+```
+
+If the book is one-sided or crossed, fall back on the last trade, and drop the
+strike if there is none. If $a - b \gt 0.90$, do the same, because a 0 / 1 book
+has a meaningless 0.50 mid.
+
+**Step 2: orient every contract as "above $K$".**
+
+```math
+\text{"above } K\text{"}:\ (b_D,\ a_D) = (b,\ a) \qquad\qquad \text{"below } K\text{"}:\ (b_D,\ a_D) = (1 - a,\ 1 - b)
+```
+
+**Step 3: take the midpoint,** $m = \tfrac12 (b_D + a_D)$.
+
+**Step 4: drop dead strikes**, i.e. books resting on the extreme tick:
+
+```math
+(b_D,\ a_D) = (0,\ 0.01) \quad\text{or}\quad (0.99,\ 1) \;\;\Rightarrow\;\; \text{drop}
+```
+
+Their mids, 0.005 and 0.995, are artefacts of the 1¢ grid. $D$ gets
+*integrated*, so a dead upper wing spanning width $W$ adds
+$0.005 \cdot W$ to every call. A 9,500-wide wing adds \$47.50. The dead lower wing
+does the same to every put. The tail model (§5) covers the region instead.
+
+**Step 5: force $D$ non-increasing.** A density must be $\ge 0$, so $D$ must fall with $K$.
+Crossed or stale quotes break this, so the mids are projected with
+pool-adjacent-violators:
+
+```math
+(D_0, \dots, D_{n-1}) \;=\; \underset{x_0 \,\ge\, x_1 \,\ge\, \cdots \,\ge\, x_{n-1}}{\arg\min}\ \sum_i \big(x_i - m_i\big)^2
+```
+
+The result is the curve every later step integrates.
+Range contracts (pay if $S_T$ lands in a bin) can also be turned into $D$; see
+[Pitfalls](#pitfalls-on-real-kalshi-data) for why the menu leaves them out.
+
+## 3. Calls, puts and the forward from D(K)
+
+**Lemma.** For $s \ge 0$, $K \ge 0$:
+
+```math
+(s-K)^+ = \int_K^{\infty} \mathbf{1}\{s > u\}\,du
+\qquad
+(K-s)^+ = \int_0^{K} \mathbf{1}\{s \le u\}\,du
+\qquad
+s = \int_0^{\infty} \mathbf{1}\{s > u\}\,du
+```
+
+*Proof.*
+
+```math
+\int_K^{\infty} \mathbf{1}\{s > u\}\,du =
+\begin{cases} \int_K^{s} du = s-K, & s > K \\ 0, & s \le K \end{cases}
+\;=\; (s-K)^+
+\qquad\quad
+\int_0^{K} \mathbf{1}\{s \le u\}\,du =
+\begin{cases} \int_s^{K} du = K-s, & s \le K \\ 0, & s > K \end{cases}
+\;=\; (K-s)^+
+```
+
+The third identity is the first at $K = 0$. ∎
+
+**Theorem.** Set $s = S_T$, take $\mathbb{E}^{\mathbb{Q}}$, and swap $\mathbb{E}$ with $\int$
+(Tonelli, since the integrand is $\ge 0$):
 
 ```math
 \begin{aligned}
-C(K) &= \mathbb{E}\big[(S_T-K)^+\big] &&= \int_K^{\infty} \mathbb{Q}(S_T > u)\,du \\[2pt]
-P(K) &= \mathbb{E}\big[(K-S_T)^+\big] &&= \int_0^{K} \mathbb{Q}(S_T \le u)\,du \\[2pt]
-F    &= \mathbb{E}[S_T]               &&= \int_0^{\infty} \mathbb{Q}(S_T > u)\,du
+C(K) &= \mathbb{E}\big[(S_T-K)^+\big] &&= \int_K^{\infty} \mathbb{Q}(S_T > u)\,du &&= \int_K^{\infty} D(u)\,du \\[4pt]
+P(K) &= \mathbb{E}\big[(K-S_T)^+\big] &&= \int_0^{K} \mathbb{Q}(S_T \le u)\,du &&= \int_0^{K} \big(1 - D(u)\big)\,du \\[4pt]
+F    &= \mathbb{E}[S_T]               &&= \int_0^{\infty} \mathbb{Q}(S_T > u)\,du &&= \int_0^{\infty} D(u)\,du
 \end{aligned}
 ```
 
-That first line is the only step doing real work, and it is just the tail formula
-$\mathbb{E}[X]=\int_0^{\infty}\mathbb{Q}(X \gt y)\ dy$ applied to the payoff itself:
+∎
 
-```math
-\mathbb{E}\big[(S_T-K)^+\big]
-\;=\; \int_0^{\infty} \mathbb{Q}\big((S_T-K)^+ > y\big)\,dy
-\;=\; \int_0^{\infty} \mathbb{Q}(S_T > K+y)\,dy
-\;=\; \int_K^{\infty} \mathbb{Q}(S_T > u)\,du
-```
-
-A vanilla *is* a stack of digitals, and the ladder quotes the integrand.
-
-## Conventions
-
-- **$S_T$ is the contract's settlement value**, whatever the series' rules define
-  it to be — for these ladders typically a reference-index fixing rather than one
-  exchange's last trade. The synthetic options are options on that number.
-- **$D(K)$ is read straight off the quote**, as an undiscounted probability. The
-  sums below are therefore values at expiry, and the chain multiplies the
-  finished vanilla by $\mathrm{DF} = e^{-r\tau}$. At the default `rate=0`,
-  $\mathrm{DF}=1$ and the distinction vanishes; on hourly-to-weekly expiries carry
-  is far inside the 1¢ tick anyway. A non-zero `rate` treats the quotes as
-  forward-settled. If you would rather model a Kalshi price as
-  $\mathrm{DF}\cdot\mathbb{Q}$, pass `Digital`s with the quotes divided by
-  $\mathrm{DF}$, and `call` then comes back as exactly what the replicating
-  digitals cost.
-- **Quotes are mids by default.** The "bounds" below bound the integral of
-  whichever curve you built from. They are not bounds on what the book will let
-  you trade; `side=` is for that (see [What the numbers mean](#what-the-numbers-mean)).
-
-## The sum
-
-So a Kalshi strike ladder already is a discretised call chain — all that is left
-is to sum it. Write the quoted strikes $K_0 \lt \dots \lt K_{n-1}$, the digital levels
-$D_i = D(K_i)$, the gaps $\Delta K_i = K_{i+1}-K_i$, and let $T$ be the modelled
-mass above the top strike:
+**Corollaries.** Differentiate in $K$. For parity, take $\mathbb{E}$ of $(s-K)^+ - (K-s)^+ = s - K$:
 
 ```math
 \begin{aligned}
-C_{\text{hi}}(K_j) &= \sum_{i=j}^{n-2} D_i\,\Delta K_i \;+\; T
-  &&\text{left rule, plus the tail} \\[4pt]
-C_{\text{lo}}(K_j) &= \sum_{i=j}^{n-2} D_{i+1}\,\Delta K_i
-  &&\text{right rule, tail discarded} \\[4pt]
-C^{\ast}(K_j)      &= \sum_{i=j}^{n-2} \tfrac{1}{2}\big(D_i + D_{i+1}\big)\Delta K_i \;+\; T
-  &&\text{trapezoid — the point estimate} \\[4pt]
-\text{band}        &= C_{\text{hi}} - C_{\text{lo}}
-                    = \sum_{i=j}^{n-2} \big(D_i - D_{i+1}\big)\Delta K_i \;+\; T
+C'(K)  &= -D(K) & C''(K) &= f(K) \quad \text{(Breeden–Litzenberger)} \\[4pt]
+P'(K)  &= 1 - D(K) & C(K) - P(K) &= F - K \quad \text{(put–call parity)}
 \end{aligned}
 ```
 
-These are `call_hi`, `call_lo`, `call` and `band` in the output. $D$ is
-non-increasing, so the left rule over-counts and the right rule under-counts and
-the ladder brackets the call for free. $C_{\text{lo}}$ drops $T$ on purpose:
-discarding mass above the top strike can only shrink $\mathbb{E}[(S_T-K)^+]$,
-so it is a lower bound that assumes nothing about the unquoted wing. There is no
-matching rigorous upper bound, since unquoted mass can sit arbitrarily far out —
-so $C_{\text{hi}}$ carries the modelled tail and is an estimate.
+So a vanilla call is a stack of digitals, one per \$1 of strike above $K$.
+The Kalshi ladder quotes the integrand.
 
-The trapezoid is the average of the two rules, plus the tail, so
+## 4. The ladder is a Riemann sum
+
+Kalshi quotes $D$ only at $K_0, \dots, K_{n-1}$. Since $D$ is non-increasing, on each gap
 
 ```math
-C^{\ast} \;=\; \tfrac{1}{2}\big(C_{\text{hi}} + C_{\text{lo}}\big) + \tfrac{1}{2}\,T
+D_{i+1}\,\Delta K_i \;\le\; \int_{K_i}^{K_{i+1}} D(u)\,du \;\le\; D_i\,\Delta K_i
 ```
 
-The point estimate sits $T/2$ above the middle of $[C_{\text{lo}}, C_{\text{hi}}]$.
-That is why the output reports the band as a range, never as ± around the call.
+Sum from $j$ to $n-2$, and add the tail above the top strike,
+$T = \int_{K_{n-1}}^{\infty} D(u)\ du = C(K_{n-1}) \ge 0$:
 
-Everything else falls out of the same curve:
+```math
+\underbrace{\sum_{i=j}^{n-2} D_{i+1}\,\Delta K_i}_{C_{\text{lo}}(K_j)}
+\;\;\le\;\; C(K_j) \;\;\le\;\;
+\underbrace{\sum_{i=j}^{n-2} D_i\,\Delta K_i \;+\; T}_{C_{\text{hi}}(K_j)}
+```
+
+- $C_{\text{lo}}$ drops $T \ge 0$, so it is a **rigorous lower bound**. It assumes nothing about unquoted strikes.
+- $C_{\text{hi}}$ needs $T$, which has to be modelled (§5), so it is an **estimate**, not a bound.
+
+**Point estimate:** the trapezoid rule,
+
+```math
+C^{\ast}(K_j) \;=\; \sum_{i=j}^{n-2} \tfrac12\big(D_i + D_{i+1}\big)\,\Delta K_i \;+\; T
+\;=\; \tfrac12\big(C_{\text{lo}} + C_{\text{hi}}\big) + \tfrac12 T
+```
+
+$C^{\ast}$ sits $T/2$ above the midpoint of $[C_{\text{lo}}, C_{\text{hi}}]$, so the
+`band` column $C_{\text{hi}} - C_{\text{lo}}$ is a range, never "± around the call".
+
+**The same bounds as portfolios.** The *high stack* holds $\Delta K_i$ contracts "above $K_i$";
+the *low stack* holds $\Delta K_i$ contracts "above $K_{i+1}$" ($i = j, \dots, n-2$).
+If $S_T \in (K_m, K_{m+1}]$ with $j \le m \le n-2$:
+
+```math
+\text{low stack} = \sum_{i=j}^{m-1} \Delta K_i = K_m - K_j
+\;\;\le\;\; (S_T - K_j)^+ \;\;\le\;\;
+K_{m+1} - K_j = \sum_{i=j}^{m} \Delta K_i = \text{high stack}
+```
+
+If $S_T \le K_j$, all three are 0. If $S_T \gt K_{n-1}$, both stacks stop at
+$K_{n-1} - K_j$. The shortfall is $(S_T - K_{n-1})^+$, a call at the top strike, whose
+price is $T$. Priced at $D$, the stacks cost exactly $C_{\text{lo}}$ and $C_{\text{hi}} - T$.
+
+![The ATM call drawn twice. Left: D(K) with the area right of the strike shaded and ruled into its ΔK columns. Right: the two digital stacks at expiry, bracketing the hockey stick. Below: every banded strike with its greeks.](figures/call.svg)
+
+## 5. Tails
+
+**Above the top strike:** exponential decay,
+
+```math
+D(u) = D_{n-1}\, e^{-(u - K_{n-1})/\lambda}\quad (u > K_{n-1})
+\qquad\Longrightarrow\qquad
+T = \int_{K_{n-1}}^{\infty} D(u)\,du = D_{n-1}\,\lambda
+```
+
+$\lambda$ comes from a least-squares fit $\ln D_i \approx a + b K_i$ over the top strikes, with $\lambda = -1/b$.
+The window starts at 4 strikes and widens, up to 16, until $D$ has at least halved
+across it; on 1¢ quotes a short window can be exactly flat, which gives $b = 0$.
+Fallback: $T = D_{n-1} \Delta K_{n-2}$.
+
+**Below the bottom strike:** the CDF $1 - D$ decays exponentially through $(K_0, 1-D_0)$ and $(K_1, 1-D_1)$,
+
+```math
+1 - D(u) = (1 - D_0)\, e^{-(K_0 - u)/\lambda_L},
+\qquad
+\lambda_L = \frac{\Delta K_0}{\ln\!\big[(1-D_1)/(1-D_0)\big]}
+```
+
+```math
+L \;=\; \int_0^{K_0} D(u)\,du \;=\; K_0 - \int_0^{K_0} \big(1 - D(u)\big)\,du \;\approx\; \max\!\big(K_0 - (1 - D_0)\,\lambda_L,\ 0\big)
+```
+
+**Forward:**
+
+```math
+F \;=\; \int_0^{\infty} D(u)\,du \;=\; L + C^{\ast}(K_0)
+```
+
+`tail_weight` $= T / C^{\ast}(K_j)$. A row is flagged `model_dependent` when it exceeds 25%.
+
+## 6. Puts
+
+The put comes from parity, on the same curve:
+
+```math
+P(K_j) = C^{\ast}(K_j) - (F - K_j)
+```
+
+This adds no assumption. Substituting $F = L + C^{\ast}(K_0)$ and
+$K_j = K_0 + \sum_{i \lt j} \Delta K_i$ gives the put's own trapezoid sum over the CDF:
 
 ```math
 \begin{aligned}
-F &= C^{\ast}(K_0) + L, \qquad L = \int_0^{K_0} D(u)\,du
-  &&\text{the mass below the ladder} \\[4pt]
-C(K_j) &= \mathrm{DF}\cdot C^{\ast}(K_j) \\[4pt]
-P(K_j) &= C(K_j) - \mathrm{DF}\cdot\big(F - K_j\big)
-  &&\text{parity, same curve} \\[4pt]
-\mathrm{cdf}_i &= 1 - D_i \\[4pt]
-f(K_i) &= \frac{D_{i-1} - D_{i+1}}{K_{i+1} - K_{i-1}}
-  &&\text{one-sided at the ends}
+P(K_j) &= K_j - L - \big(C^{\ast}(K_0) - C^{\ast}(K_j)\big) \\[2pt]
+       &= K_0 + \sum_{i=0}^{j-1} \Delta K_i \;-\; L \;-\; \sum_{i=0}^{j-1} \tfrac12\big(D_i + D_{i+1}\big)\Delta K_i \\[2pt]
+       &= \underbrace{(K_0 - L)}_{P(K_0)} \;+\; \sum_{i=0}^{j-1} \tfrac12\big[(1-D_i) + (1-D_{i+1})\big]\Delta K_i
 \end{aligned}
 ```
 
-`build_chain` computes exactly these, cumulating downward from the top strike so
-each `C(K_j)` reuses the sum above it, and hands back strikes, the implied CDF
-and density, synthetic call/put values, the implied forward, Black-76 implied
-vols and the greeks. Both $f$ and $P$ are floored at zero on the way out. That is
-belt-and-braces rather than arithmetic. A PAVA-repaired $D$ is non-increasing, so
-$f \ge 0$ already. Parity at the bottom strike gives
-$P(K_0) = \mathrm{DF}\cdot(K_0 - L) \ge 0$, because $L$ is the area under
-$D \le 1$ on $[0, K_0]$, so $L \le K_0$. The put only grows from there, since
-$P(K_{j+1}) - P(K_j) = \mathrm{DF}\cdot\tfrac{1}{2}(\mathrm{cdf}_j + \mathrm{cdf}_{j+1})\,\Delta K_j \ge 0$.
-If either floor ever binds, the curve reached the sum in a state the repair was
-supposed to rule out.
+So $P \ge 0$ and $P$ rises with $K$: $D \le 1 \Rightarrow L \le K_0$, and every term in the sum is $\ge 0$.
+The mirror bounds, drawn in the put figure, use the left sum of $1 - D$ as `put_lo` and the right sum plus $K_0 - L$ as `put_hi`.
+
+**Discounting** is applied last:
+
+```math
+C(K) = \mathrm{DF}\cdot C^{\ast}(K)
+\qquad
+P(K) = C(K) - \mathrm{DF}\cdot(F - K)
+\qquad
+\mathrm{DF} = e^{-r\tau}
+```
+
+A non-zero `rate=` treats the quotes as forward-settled. To model a price as
+$\mathrm{DF} \cdot \mathbb{Q}$ instead, pass `Digital`s with the quotes divided by $\mathrm{DF}$.
+
+![The ATM put, mirrored: the CDF with the area left of the strike shaded, and digital-put stacks bracketing the put payoff. The same per-strike block underneath.](figures/put.svg)
+
+## 7. Density, implied vol, greeks
+
+**Density**, by central difference (one-sided at the ends):
+
+```math
+f(K_i) \;=\; \frac{D_{i-1} - D_{i+1}}{K_{i+1} - K_{i-1}} \;\ge\; 0
+```
+
+**Implied vol**: the $\sigma$ that solves Black-76, found by bisection. $\tau$ comes from the market's `close_time`.
+
+```math
+C(K) = \mathrm{DF}\,\big[F\,N(d_1) - K\,N(d_2)\big],
+\qquad
+d_{1,2} = \frac{\ln(F/K) \pm \tfrac12 \sigma^2 \tau}{\sigma\sqrt{\tau}}
+```
+
+**Greeks** come in two tiers. The strike derivatives are exact, straight off the quotes (§3):
+
+```math
+\frac{\partial C}{\partial K} = -\mathrm{DF}\cdot D(K)
+\qquad
+\frac{\partial P}{\partial K} = \mathrm{DF}\cdot\big(1 - D(K)\big)
+\qquad
+\frac{\partial^2 C}{\partial K^2} = \mathrm{DF}\cdot f(K)
+```
+
+Delta, gamma, vega and theta differentiate in $F$, $\sigma$ and $t$, which one
+expiry's ladder does not pin down. They are Black-76 at each strike's own IV:
+
+| greek | call | units shown |
+|---|---|---|
+| delta $\partial V/\partial F$ | $\mathrm{DF} \cdot N(d_1)$; put: $\mathrm{DF} \cdot \big(N(d_1) - 1\big)$ | per \$1 of $F$ |
+| gamma $\partial^2 V/\partial F^2$ | $\mathrm{DF} \cdot \varphi(d_1) / (F\sigma\sqrt{\tau})$ | per \$1², × 1e6 |
+| vega $\partial V/\partial \sigma$ | $\mathrm{DF} \cdot F \varphi(d_1) \sqrt{\tau}$ | per vol point |
+| theta $-\partial V/\partial \tau$ | $rV - \mathrm{DF} \cdot F \varphi(d_1)\sigma / (2\sqrt{\tau})$ | per day |
+
+`OptionChain.greeks(row, kind)` returns both tiers. The Black-76 four are `None`
+when the vol inversion fails.
+
+## 8. What you can actually trade
+
+`side="bid"` / `"ask"` rebuilds the chain from that side of the book. For a call:
+
+```math
+C_{\text{lo}}\big(D^{\text{bid}}\big) \;\le\; \text{executable call} \;\le\; C_{\text{hi}}\big(D^{\text{ask}}\big)
+```
+
+That means selling the low stack at the bids, or buying the high stack at the asks plus the modelled tail.
+A put integrates $1 - D$, whose bid is $1 - D^{\text{ask}}$, so the `"bid"` chain
+carries call bids and **put asks**. The mid-chain `call` is a point estimate, not a fill.
+
+---
 
 ## Setup
 
-The reconstruction library and the selftest are pure standard library — clone and
-run, nothing to install:
+The library and selftest are standard-library only:
 
 ```bash
 python3 -c "import riemann_chain; riemann_chain.selftest()"
 ```
 
-Live quotes need the signed client and a Kalshi API key:
+Live quotes need a Kalshi API key:
 
 ```bash
 pip install -r requirements.txt
-cp config.example.ini config.ini      # then fill in api_key_id
+cp config.example.ini config.ini      # fill in api_key_id
 ```
 
-Kalshi shows the private key once, at creation; save it beside `config.ini` as
-`kalshi_private_key.pem`. Both are gitignored. `use_demo = true` points at
-demo-api.kalshi.co, so you can wire it up without touching a funded account —
-and only GET endpoints are ever called, so a read-scoped key is enough.
+Save the private key (Kalshi shows it once) beside `config.ini` as
+`kalshi_private_key.pem`. Both are gitignored. `use_demo = true` points at the demo
+API. Only GET endpoints are called, so a read-only key is enough.
 
 ## Use
 
@@ -149,195 +349,17 @@ print(chain.format_table())
 ```
 
 ```bash
-python3 riemann_chain.py
+python3 riemann_chain.py              # pick a coin, then an expiry (local time)
 ```
 
-That is the whole interface — no flags. It asks which coin, lists that coin's open
-expiries **in your local timezone**, and on your pick prints the chain and writes
-three figures for the strike nearest the forward:
+The menu lists the hourly and daily above/below ladders. It writes the chain table
+plus `chain.svg`, `call.svg` and `put.svg` for the strike nearest the forward.
 
-```
-crypto with a quoted strike ladder:
+`build_chain` keyword arguments: `side=` (§8), `rate=` (§6), `min_strikes=`, and
+`expiry=` / `now=` to price as of another moment.
+`digitals_from_markets(..., drop_pinned=False)` keeps the dead strikes, for inspection.
 
-   1)  Bitcoin         2 ladders
-   2)  Ethereum        2 ladders
-   ...
-   9)  run the offline selftest  (no network)
-
-choose a coin [1-9, q to quit]: 1
-
-Bitcoin expiries, your local time (CDT):
-
-   1)  Tue 04 Aug  01:00  in 46m     hourly   KXBTCD-26AUG0402
-   2)  Tue 04 Aug  16:00  in 15h 46m daily    KXBTCD-26AUG0417
-```
-
-(The coins and counts come from a live `/series` call; yours will differ.)
-
-The coin list is filtered to the hourly and daily **threshold** ladders —
-*above/below* series, which quote `D(K)` directly. The 15-minute up/down
-binaries, FDV one-offs and annual min/max markets have no strike ladder behind
-them and never appear.
-
-**Bin ladders (*range*) are deliberately not offered.** A bin pays only inside
-its own floor/cap, which is the wrong payoff to rebuild vanillas from: `D(K)` has
-to be cumulated across ~190 quotes, and `_pinned` — which drops tick-dead strikes
-on a threshold ladder — cannot touch a bin ladder, because bins are a partition
-and dropping members would break the contiguity and unit-mass constraints
-`_from_bins` projects onto. The dead bins survive, keep slivers of mass, and get
-integrated across a ladder running ±15%. On the same BTC daily expiry:
-
-| | thresholds | bins |
-|---|---|---|
-| vol from the **density** | 32.2% | 31.4% |
-| vol from the **call column** | 34.6% | **53.7%** |
-| mass beyond ±5% of forward | 0.0000% | **4.76%** |
-| implied forward | 63,831.81 | 63,555.04 |
-
-Both see the same distribution near the money; the bin ladder's call column — the
-one an option actually depends on — is inflated by mass on strikes that are not
-really quoted. The library still reconstructs a bin ladder if you hand its
-markets to `build_chain` yourself, renormalisation and all (see Validation); it
-just no longer shows up as something to trade off.
-
-(The density row was measured with an earlier build that read the vol off the
-density's *peak*. `_density_vol` now uses the interquartile range — see
-[Validation](#validation) — so that row would read a little differently today.
-The call-column vols, the tail mass and the forwards do not depend on it.)
-
-The knobs the old flags exposed are gone rather than defaulted. Tail fitting and
-PAVA repair are now unconditional — truncating the tail biases the forward and
-every call low, and integrating a non-monotone `D(K)` produces negative
-densities, so neither switch was ever worth throwing. The widest-usable-spread
-cutoff is a module constant. What survives on `build_chain` is what gets used:
-`side=` (the `bid`/`ask` chains that give the executable band), `rate=` (zero
-carry is right for these expiries, not for every expiry), `min_strikes=`, and
-`expiry=` / `now=` for pricing a ladder as of some moment other than now. The
-extreme-tick filter is one level down, on `digitals_from_markets(...,
-drop_pinned=False)`, since seeing what it drops means looking at the digitals
-rather than the chain.
-
-**`chain.svg`** is the table `OptionChain.format_svg()` renders: the same columns
-plus an inline density bar, the ATM row marked, and the warnings carried into the
-footer. It is dependency-free and self-contained — light and dark palettes, with
-the light values also written as presentation attributes so a rasteriser that
-ignores `<style>` still gets a correct render rather than black-on-black.
-
-![The reconstructed chain table: 18 strikes of the BTC ladder expiring Fri 07 Aug, with quotes, implied CDF and density, synthetic call and put values, the lo/hi band and implied vols.](figures/chain.svg)
-
-**`call.svg`** is `OptionChain.format_payoff_svg()` — the same reconstruction
-drawn twice, once in price space and once in payoff space:
-
-- **left**, the Riemann picture the module is named for: `D(K)` with the region
-  right of the ATM strike shaded, since that area *is* `C(K_atm)`, and ruled at
-  every strike into the `ΔK` columns the sum is made of. The two staircases
-  straddling the curve are the left- and right-hand sums, i.e. `call_hi` and
-  `call_lo`, and the dashed segment past the top strike is the modelled tail.
-- **right**, those same two sums read at expiry. Holding `ΔK_i` digitals at each
-  `K_i` at or above the strike super-replicates `(S_T − K)⁺`; the same widths struck
-  one strike up sub-replicate it. **Each digital is drawn as its own slab** —
-  `ΔK_m` high, running right from `K_m₊₁`, which is where and how much that
-  contract pays — so the staircase is visibly the slabs piled on each other rather
-  than an outline, and the height under any settlement is what the stack collects.
-  The true hockey stick is trapped between the two. The vertical gap between the
-  stacks is itself a payoff: it pays `ΔK_m` if `S_T` lands in `(K_m, K_m₊₁]`, a bin
-  the ladder prices at `ΔK_m (D_m − D_m₊₁)`. Summed over the strikes, that price is
-  the `band` column less the tail — the band is what the gap *costs*. Past the top
-  quoted strike both stacks go flat and the payoff does not. That wedge is a call
-  struck at the top strike, which is exactly what the tail model is guessing at,
-  and why `call_lo` is a bound and `call_hi` is not.
-
-It takes the *full* chain, not the CDF-banded view the table prints, so the
-"ladder ends here" line sits where the quotes actually stop.
-
-![The ATM call drawn twice: left, the survival curve with the area right of the strike shaded and ruled into its dK columns; right, the same sum at expiry as stacked digital slabs bracketing the hockey stick. Below, every banded strike with its greeks.](figures/call.svg)
-
-**`put.svg`** is the mirror image, `OptionChain.format_put_payoff_svg()`.
-A put is the same sum walked in from the other end of the ladder — `P(K) = ∫₀ᴷ
-Q(S_T ≤ u) du` — so the left panel plots the CDF and shades the area *left* of the
-strike, and because `F` rises the staircases swap roles: the right-hand sum is
-`put_hi`, the left-hand sum `put_lo`. On the right, `ΔK_i` digital *puts* struck at
-each `K_i₊₁` below the strike super-replicate `(K − S_T)⁺` and the same widths one
-strike down sub-replicate it, drawn as the same stacked slabs mirrored — `ΔK_m`
-high, running left from `K_m`. Below the bottom quoted strike both stacks flatten at
-`K_atm − K_0` while the payoff keeps climbing toward `K_atm`. That wedge is a put
-struck at `K_0` — the lower tail — and it is worth exactly the chain's put at the
-bottom strike, since `P(K_0)` is `DF ×` the whole (modelled) area below the ladder.
-
-![The ATM put, mirrored: left, the CDF with the area left of the strike shaded; right, the digital-put slabs stacked leftward, bracketing the put's payoff. The same per-strike block underneath, with dP/dK in place of dC/dK.](figures/put.svg)
-
-All three are the run committed here — `KXBTCD-26AUG0717`, the BTC ladder
-expiring Fri 07 Aug, 64h out, forward 64,189.72 and ATM IV 36.1% at K=64,000.
-They live in `figures/`, which is gitignored as a directory so a stray re-run
-cannot land in a commit; these three were added deliberately with `git add -f`,
-since an image GitHub cannot fetch is a broken icon. Re-running the tool
-overwrites the copies at the repo root, not these.
-
-The snapshots predate two label fixes, and the August quotes behind them cannot be
-re-fetched. The payoff figures' header prints the band as `±` half its width; it
-is now printed as the `[lo, hi]` range, since the point estimate is not centred
-in it. The pinned-strike warning in all three footers says "~\$40 to every call";
-that figure lumped both dead wings together. The upper wing lifts every call and
-the lower wing lifts every put, and the warning now prices them separately. The
-numbers in the figures are otherwise what the current code computes.
-
-Both payoff figures carry a **greeks strip** under the price row, and it is split
-on purpose. Differentiating
-$C(K)=\mathrm{DF}\int_K^{\infty}\mathbb{Q}(S_T \gt u)\ du$ *in the strike* hands
-back the integrand:
-
-```math
-\frac{\partial C}{\partial K} = -\,\mathrm{DF}\cdot\mathbb{Q}(S_T > K)
-\qquad\qquad
-\frac{\partial^2 C}{\partial K^2} = \mathrm{DF}\cdot f(K)
-```
-
-which is Breeden–Litzenberger read backwards. Both sides of that are already on
-the ladder — they are the `cdf` and `pdf` columns in different units
-($\partial C/\partial K = -\mathrm{DF}\cdot(1-\mathrm{cdf})$, the repaired quote,
-which equals `-DF × digital_mid` unless PAVA had to move that strike) — so
-$\partial C/\partial K$ is **exact**, needs no vol, and stays right where the
-smile is wrong. It is drawn in the digitals' own blue, and it is the slope of the
-very curve the left panel plots. The put's mirror is
-$\partial P/\partial K = +\mathrm{DF}\cdot\mathbb{Q}(S_T \le K)$, its own left
-panel, and parity pins them:
-
-```math
-\frac{\partial C}{\partial K} - \frac{\partial P}{\partial K} = -\,\mathrm{DF}
-```
-
-Delta, gamma, vega and theta differentiate in `F`, `σ` and `t` instead — none of
-which one expiry's strike ladder pins down, since the quotes fix the
-*distribution* of `S_T`, not how it responds when the forward or the vol moves.
-Those four are Black-76 at that strike's own IV: a smile-local reading, exact
-only for the option it was struck from, and dashed out entirely when the vol
-inversion fails. `OptionChain.greeks(row, kind)` returns the lot.
-
-Under the panels both figures print **every quoted strike in the 2%–98% CDF
-band** — strike, `D(K)`, `cdf`, `pdf`, the reconstructed call or put, its `iv`,
-and all five greeks per row, ATM marked. The panels argue about one strike; this
-says what every other rung is worth, so the figure carries the whole chain
-instead of a headline. The band is the same one the printed table uses, because
-the *panels* deliberately take the full ladder (that is where the "quotes stop
-here" line comes from) and a live ladder can run hundreds of strikes whose rows
-would be all zeroes; the count hidden is stated under the table.
-
-Reading down the `dC/dK` column against `D(K)` is the whole model-free claim in
-one glance: at `DF = 1` they are the same numbers, negated. On the put side
-`dP/dK` and `cdf` match outright.
-
-**Both payoff figures need two live strikes on their own side of the money**, and
-on these ladders that is a real constraint, not a formality. `_pinned` drops every
-strike resting on the extreme tick, and on a short-dated crypto expiry the whole
-distribution fits inside a few rungs — the ETH hourly ladder quotes 300 strikes
-5 wide and, an hour out, exactly two of them are two-sided. When there is no stack
-to draw, the figure writes a note giving the ladder's actual shape instead of a
-picture, `main` says which figure fell back, and the chain table and `chain.svg`
-are unaffected. A longer-dated expiry is the fix: on 2026-08-04 the same ETH
-series went 5 live strikes at the 17:00 expiry to 14 three days out, and BTC 3 to
-28. `OptionChain.replicable()` returns the two flags if you want to check first.
-
-Live output (BTC daily, 112h to expiry):
+Live output (BTC daily, 112h to expiry, excerpt of a 500-wide ladder):
 
 ```
 forward    62,799.99      ATM IV 37.6% (K=63,000)
@@ -351,208 +373,99 @@ forward    62,799.99      ATM IV 37.6% (K=63,000)
   band = call_hi - call_lo, a full width -- call is not centred in it
 ```
 
-(An excerpt: the ladder was 500 wide, so the `pdf` central differences use strikes
-not shown. The column formerly headed `+/-` is the band's full width.)
+The smile (45% → 37% → 42%) comes out of independently quoted binaries. Nothing
+in the code imposes it.
 
-The smile falls from 45% to 37% and back to 42% — nothing in the code enforces
-that shape; it comes out of independently quoted binaries.
+### Output fields
 
-## What the numbers mean
-
-| field | meaning |
+| field | value |
 |---|---|
-| `digital_bid/mid/ask` | the binary's own quote, normalised to `Q(S > K)` |
-| `cdf`, `pdf` | implied distribution; `pdf` is per \$1 of strike |
-| `call`, `put` | trapezoid reconstruction, `put` by parity off the same curve |
-| `call_lo` | **rigorous** lower bound on the curve's integral — right-Riemann, tail discarded |
-| `call_hi` | upper *estimate* — left-Riemann + modelled tail |
-| `band` | `call_hi − call_lo`, a full width; `call` sits `T/2` above its midpoint |
-| `tail_weight` | fraction of `call` coming from extrapolation; `model_dependent` flags >25% |
-| `iv` | Black-76 vol implied by `call` against the implied forward |
+| `digital_bid/mid/ask` | the quote, oriented as $D(K)$ |
+| `cdf`, `pdf` | $1 - D(K)$, and $f(K)$ per \$1 of strike |
+| `call`, `put` | $\mathrm{DF} \cdot C^{\ast}$, and $P$ by parity (§6) |
+| `call_lo`, `call_hi` | lower bound, and upper estimate (§4) |
+| `band` | $C_{\text{hi}} - C_{\text{lo}}$ |
+| `tail_weight` | $T / C^{\ast}$; `model_dependent` if over 25% |
+| `iv` | Black-76 vol implied by `call` |
 
-`OptionChain.greeks(row, kind)` adds the sensitivities, in the units a trader
-quotes them rather than the raw partials:
+### Figures
 
-| field | meaning | model? |
-|---|---|---|
-| `dual_delta` | `∂V/∂K` — **exact**: `−DF × D(K)` for a call, `+DF × Q(S ≤ K)` for a put | none |
-| `dual_gamma` | `∂²V/∂K²` — **exact**, `DF ×` the density | none |
-| `delta` | `∂V/∂F`, per \$1 of forward | Black-76 at `row.iv` |
-| `gamma` | `∂²V/∂F²`, per \$1² — displayed `× 1e6`, as `pdf` is | Black-76 at `row.iv` |
-| `vega` | `∂V/∂σ`, per **vol point** | Black-76 at `row.iv` |
-| `theta` | `−∂V/∂τ` (τ = time to expiry), per **day**, with `F` and `σ` held | Black-76 at `row.iv` |
+The three SVGs are self-contained, with light and dark palettes. They come from
+the `KXBTCD-26AUG0717` run (forward 64,189.72, ATM IV 36.1%) and live in `figures/`.
+A re-run writes new copies to the repo root instead. Two labels have changed since
+that snapshot: the band now prints as a `[lo, hi]` range rather than `±`, and the
+dead-strike warning now prices calls and puts separately.
 
-The Black-76 four are `None` when the vol inversion failed; the two strike
-derivatives are always there, since they need only the quote and the density.
-Theta's carry term uses the rate recovered from the chain's own discount factor,
-so at the default `r = 0` it is pure gamma rent.
+The payoff figures need two live strikes on each side of the money. Very short
+expiries often have fewer, and then the figure prints the ladder's shape instead.
+`OptionChain.replicable()` reports this up front.
 
-`side="bid"`/`"ask"` rebuild the whole chain from that side of the book. Mind
-which side that is for puts. A put integrates the *complementary* digital
-`1 − D`, whose bid is `1 − D_ask`, so the `"bid"` chain carries call bids and put
-**asks**, and `"ask"` the reverse. For a call, the executable band is `call_lo`
-off the `"bid"` chain (selling the sub-replicating stack at the bids) to
-`call_hi` off the `"ask"` chain (buying the super-replicating one, plus the
-modelled tail). The trapezoid `call` blends both stacks and is not itself a price
-anyone will fill you at.
+## Pitfalls on real Kalshi data
 
-## Things worth knowing
+- **Dead wings** (§2 step 4). On a 189-strike BTC ladder, keeping the 0.00 / 0.01
+  strikes added $0.005 \times 9{,}500 = 47.50$ dollars to every call, and read back as a fake symmetric
+  smile (the density said 26% vol, the call column 43.5%). PAVA can't see it,
+  since a flat 0.005 is monotone. The forward can't see it either, because the two wings cancel in $\mathbb{E}[S]$.
+- **Range (bin) ladders aren't offered in the menu.** About 190 bins, almost all
+  quoted 0.00 / 0.01, so $\sum_j m_j \approx 1.95$. The code projects the bin masses onto
+  $\lbrace \sum_j p_j = 1,\ b_j \le p_j \le a_j \rbrace$ and sets $D(L_i) = \sum_{j \ge i} p_j$.
+  Even so, the dead bins keep slivers of mass that get integrated across ±15%:
 
-Most of the work here is not the integral — it's making the integral survive a
-real order book.
+  | same BTC daily expiry | thresholds | bins |
+  |---|---|---|
+  | vol from the density | 32.2% | 31.4% |
+  | vol from the call column | 34.6% | **53.7%** |
+  | mass beyond ±5% of forward | 0.0000% | **4.76%** |
+  | implied forward | 63,831.81 | 63,555.04 |
 
-- **Bin ladders must be renormalised**, which is half of why the menu no longer
-  lists them. The hourly series (`KXBTC`) quotes ~190
-  `between` bins, and all but two sit at 0.00 bid / 0.01 ask. Cumulating each
-  bin's 0.005 midpoint injects ~0.95 of fictitious probability, which smears the
-  survival curve and threw the implied forward 3.6% off spot. Because the bins
-  partition the outcome space, their masses must sum to 1, so the midpoints are
-  projected onto that constraint inside each bin's own bid/ask box — dead bins
-  clip to their zero bid, traded bins keep their mass. Test 10 pins this.
-- **Threshold ladders must have their dead wings dropped.** The same tick
-  artefact bites the `greater`/`less` series (`KXBTCD`) a different way. A
-  far-OTM strike quoted 0.00 / 0.01 has a 0.005 midpoint, and `D(K)` gets
-  *integrated*: a 189-strike ladder whose dead upper wing spans \$9,500 of
-  100-wide strikes adds `0.005 × 9,500 = $47.50` to every call on the board, and
-  a dead lower wing quoted 0.99 / 1.00 does the same to every put. The forward
-  survives — the upper wing's floor and the lower wing's 0.995 ceiling cancel —
-  so the tell is that `cdf`/`pdf` imply one vol (~26%) and the `call` column
-  another (43.5%), with a large symmetric smile that is really a constant. PAVA
-  cannot see it, since a flat 0.005 is perfectly non-increasing. These strikes
-  are dropped and the region left to the tail model. Test 11 pins this.
-- **The tail fit needs a window that spans a real decay.** Out where the book
-  trades for a cent or two, quantisation flattens `D(K)` into a staircase; a
-  fixed 4-point log-linear fit lands on an exactly flat segment, gets `sxy = 0`,
-  and silently degenerates to a one-grid-step tail — several times too small, and
-  a constant of integration, so it drags down every call. `_upper_tail` widens
-  its window until the curve has halved.
-- **Use `close_time`, not `expiration_time`.** For these series `expiration_time`
-  is a settlement deadline that can sit a week past the price observation.
-  Reading it as expiry inflates τ by ~50× and guts the vols.
-- **The tail is a model, not a bound.** Mass above the top strike can sit
-  arbitrarily far out, so no rigorous upper bound exists. `call_lo` drops the
-  tail and is therefore a real bound; `call_hi` carries it and is not.
-- **Empty books are dropped, not midpointed.** A 0.00/1.00 quote has a 0.50
-  midpoint that is pure fiction.
-- **Crossed quotes get PAVA-repaired**, since `D(K)` must fall with `K` and a
-  violation shows up downstream as negative density.
-- Discounting defaults to zero — carry over a few hours is far inside the
-  1-cent tick. Pass `rate=` if you disagree.
+  (The density row was measured with the older peak-based density vol, not the
+  IQR one described under [Validation](#validation).) `build_chain` still accepts bin markets if you pass them in directly.
+- **Use `close_time`, not `expiration_time`.** `expiration_time` is a settlement
+  deadline that can be a week out. It inflates $\tau$ about 50× and guts the vols.
+- **Flat tails.** A fixed 4-point tail fit can land on a flat 1¢ staircase, which
+  gives a tail several times too small and lowers every call. That's why the fit window widens (§5).
+- **Empty books** (0.00 / 1.00) are dropped rather than midpointed.
 
 ## Validation
 
-The last entry on the coin menu (or `riemann_chain.selftest()`, whose number
-depends on how many coins `/series` returned) prices binaries off a known
-lognormal and
-checks the reconstruction
-inverts it, to 2e-3 on the forward, 1e-4 of notional on the calls, and 5e-3 on
-implied vol across the 2–98% CDF band — the vol actually comes back to 4e-4 of
-the 60% input, and the looser bound is there so tick-scale noise cannot fail the
-suite. It also checks parity, the density integral, the lower bound, and the
-degenerate cases. It runs offline — no API key, no network.
+`selftest()` (the last menu entry) runs offline. It prices binaries off a known
+60%-vol lognormal and rebuilds them:
 
-All three SVGs are checked too: well-formed XML, every strike present, a fallback
-fill on every text node, dark mode declared, and nothing plotted outside the canvas.
-The greeks are checked in both tiers. The Black-76 four are differentiated
-numerically out of the closed form — off-ATM and at a non-zero rate, so theta's
-carry term is exercised rather than cancelling — and the analytic values must
-land on the finite differences; parity then pins `delta_call − delta_put = DF`,
-equal gammas and vegas, and `theta_call − theta_put = r(C − P)`. The two strike
-derivatives are checked against the quote and the density they are supposed to
-be, against each other through `dC/dK − dP/dK = −DF`, and — the claim that makes
-them worth printing — against the measured slope of the chain's own `call` and
-`put` columns across neighbouring strikes. A row with no IV must keep its strike
-derivatives and dash exactly the other four, in the object and in the strip.
+| check | tolerance |
+|---|---|
+| forward | 2e-3 |
+| every call, as a fraction of $F$ | 1e-4 |
+| IV over the 2–98% CDF band | 5e-3 (actual: 4e-4) |
+| $C_{\text{lo}} \le$ true call | every strike |
+| parity, $\int f = 1$, PAVA, degenerate ladders | ✓ |
+| Black-76 greeks vs finite differences; $\partial C/\partial K$ vs the slope of the `call` column | ✓ |
+| figure stacks re-priced to $C_{\text{lo}}$, $C_{\text{hi}}$ | 1e-9 |
 
-The per-strike blocks are checked as data, not decoration: all 11 columns headed,
-a row for every banded strike, every `dC/dK` cell equal to `-D(K)` on its own row
-(and `dP/dK` to `cdf`), every printed option value equal to the chain's own
-column, and `call - put = DF(F - K)` across every row of both tables.
+**Across markets.** `KXBTCD` (thresholds) and `KXBTC` (bins) are separate books on the same
+expiry. Rebuilt separately, their forwards agree to 0.05–0.14%; before the bin
+fix they were 3.6% apart.
 
-The payoff figures get an extra arithmetic check, since a drawing that merely
-*looks* like a replication is worth nothing — the stacks they draw are priced
-independently and must come back as `call_lo`/`call_hi` to 1e-9 (and, on the put
-side, must bracket the chain's own `put`, whose trapezoid identity is checked to
-1e-9), and must sandwich `(S_T − K)⁺` and `(K − S_T)⁺` at every settlement sampled
-across the ladder. The drawn slabs are checked too: one per digital in the stack,
-tiling it in pixel space with no gaps and no overlaps, since a gap would be
-drawing a payoff nobody holds.
-
-The stronger check is external: `KXBTCD` (threshold ladder) and `KXBTC` (bin
-ladder) are structurally independent markets on the same underlying and expiry.
-Reconstructed separately — the bin side by passing `client.markets(...)` for a
-`KXBTC` event straight to `build_chain`, since the menu no longer offers it —
-their forwards agree to **0.05–0.14%**. Before the bin renormalisation fix they
-disagreed by 3.6%.
-
-Agreeing forwards are a weak check on their own, though: the pinned-quote bug
-above left the forward almost exact while inflating every call ~70%, because the
-two wings' errors cancel in `E[S]` and add in `E[(S−K)+]`. The sharper check is
-that `cdf`/`pdf` and the `call` column must imply the *same* vol — the density is
-a local derivative of `D(K)`, the call column an integral across the whole ladder,
-so mass on strikes that are not really quoted moves one and not the other.
-
-`_vol_consistency` now runs that comparison on every chain and appends a warning
-when the ATM call implies more than **1.25×** the density's vol.
-
-The density's vol is read off the implied distribution's **interquartile range**.
-For a lognormal the quantile at level $q$ is
-$F \exp\big(-\tfrac{1}{2}\sigma^2\tau + \sigma\sqrt{\tau}\,z_q\big)$, so the drift
-cancels between the quartiles and
+**Within one chain**, the same curve is read two ways, locally and globally:
 
 ```math
-\sigma \;=\; \frac{\ln\!\big(K_{75}/K_{25}\big)}{2\,z_{0.75}\,\sqrt{\tau}},
-\qquad \mathbb{Q}(S_T \le K_q) = q,\quad z_{0.75} = 0.6745
+\sigma_{\text{IQR}} = \frac{\ln(K_{75}/K_{25})}{2\,z_{0.75}\,\sqrt{\tau}}
+\quad \big(\mathbb{Q}(S_T \le K_q) = q,\ z_{0.75} = 0.6745\big)
+\qquad \text{vs.} \qquad
+\sigma_{\text{ATM}} \text{ from the call column}
 ```
 
-is exact. It uses only the central half of the mass, which is what makes it the
-*local* reading the check needs. An earlier build read the vol off the density's
-peak ($\approx 1/(\sqrt{2\pi}\,F\sigma\sqrt{\tau})$) instead. That is the maximum of
-a central difference of 1¢-rounded quotes, so it picks up the rounding noise: on
-the selftest's tick-rounded 60% lognormal it read **54%**, which put a flawless
-ladder at 1.11×. The interquartile reading gives 59–60% there, and 1.02×.
-
-Scope, measured rather than assumed:
-
-- **Catches** a call column scaled up wholesale — the bin-ladder failure, 1.8× on
-  live BTC. Sensitivity floor is ~9–10% of mass smeared; below that the ratio sits
-  inside the range fat tails alone produce. A Student-t with 4 degrees of freedom
-  reads 1.14×. Live threshold ladders read ~1.08× under the old peak estimator,
-  which inflates the ratio by about 9% on rounded quotes.
-- **Does not catch** tick-pinned quotes adding a *constant* to every call. A
-  constant is small next to a fat ATM call and enormous next to a wing call. On
-  the synthetic it lifts the ATM call 6% and the 5%-OTM call 95%, so this ratio
-  barely moves (1.07×). `_pinned` drops those on the way in and `tail_weight`
-  flags the remainder.
-
-Step 15 of the selftest pins both directions: silent on an exact lognormal, firing
-on 10% smeared mass, with the forward moving 3e-11 across the two — which is the
-whole point, since an agreeing forward proves nothing about the call column.
-Step 11 also checks that the pinned-strike warning's two figures (calls from the
-upper wing, puts from the lower) are the right size for what including those
-strikes actually does to each column.
+`_vol_consistency` warns when $\sigma_{\text{ATM}} / \sigma_{\text{IQR}} \gt 1.25$.
+For comparison, fat tails alone read 1.14× (Student-t, 4 dof), and bin smear reads 1.8×.
+It cannot catch a *constant* added to every call; dropping dead strikes handles that.
+A matching forward proves nothing on its own: wing errors cancel in $\mathbb{E}[S]$ and add in $\mathbb{E}[(S-K)^+]$.
 
 ## Layout
 
-Two files.
-
-- `riemann_chain.py` — the reconstruction, the three figures, plus the interactive
-  front end and `selftest()`. The library half imports no third-party packages and
-  touches no network; `main()` imports `kalshi_client` lazily, so
-  `import riemann_chain` works on a box without `requests`/`cryptography`
-  installed.
-- `kalshi_client.py` — signed read-only REST client (RSA-PSS). `series()` and
-  `events()` are what the menus are built from; `markets()` is only called once a
-  single event has been chosen.
-
-Reads `config.ini` for `api_key_id` / `private_key_path` / `use_demo`.
-Only GETs market data; it never places an order.
+- `riemann_chain.py`: the reconstruction, the figures, the menu and `selftest()`.
+  The library imports no third-party packages and touches no network.
+- `kalshi_client.py`: a signed, read-only REST client (RSA-PSS). It never places orders.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-Research code, not trading advice. The reconstruction is only as good as the
-book behind it: every caveat under *Things worth knowing* is a way the numbers
-go wrong on real quotes, and `call_hi` is an estimate rather than a bound. If you
-put money behind it, that is on you.
+MIT, see [LICENSE](LICENSE). This is research code, not trading advice. `call_hi` is an estimate, not a
+bound, and the numbers are only as good as the order book behind them.
